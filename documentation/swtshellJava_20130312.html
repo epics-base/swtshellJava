@@ -1,0 +1,927 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>EPICS swtshellJava</title>
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/base.css" />
+  <link rel="stylesheet" type="text/css"
+  href="http://epics-pvdata.sourceforge.net/epicsv4.css" />
+  <style type="text/css">
+  /*<![CDATA[*/
+     .about { margin-left: 3em; margin-right: 3em; font-size: .83em}
+     table { margin-left: auto; margin-right: auto }
+     .diagram { text-align: center; margin: 2.5em 0 }
+     span.opt { color: grey }
+     span.nterm { font-style:italic }
+     span.term { font-family:courier }
+     span.user { font-family:courier }
+     span.user:before { content:"<" }
+     span.user:after { content:">" }
+     .nonnorm { font-style:italic }
+     p.ed { color: #AA0000 }
+     span.ed { color: #AA0000 }
+     p.ed.priv { display: inline; }
+     span.ed.priv { display: inline; }
+  /*]]>*/</style>
+  <!-- Script that generates the Table of Contents -->
+  <script type="text/javascript"
+  src="http://epics-pvdata.sourceforge.net/script/tocgen.js">
+ </script>
+</head>
+
+<body>
+
+<div class="head">
+<h1>EPICS swtshellJava</h1>
+<!-- Maturity: Working Draft or Request for Comments, or Recommendation, and date. -->
+
+<h2 class="nocount">EPICS v4 Working Group, Working Draft, 12-Mar-2013</h2>
+<dl>
+  <dt>Latest version:</dt>
+    <dd><a
+      href="http://epics-pvdata.hg.sourceforge.net/hgweb/epics-pvdata/swtshellJava/raw-file/tip/documentation/swtshellJava.html">
+      swtshellJava.html</a>
+    </dd>
+  <dt>This version:</dt>
+    <dd><a
+      href="http://epics-pvdata.hg.sourceforge.net/hgweb/epics-pvdata/swtshellJava/raw-file/tip/documentation/swtshellJava_20130312.html">
+      swtshellJava_20130312.html</a>
+    </dd>
+    <dt>Previous version:</dt>
+    <dd>None</dd>
+  <dt>Editors:</dt>
+    <dd>Marty Kraimer, BNL</dd>
+</dl>
+</div>
+
+<h2 class="nocount">Abstract</h2>
+
+<p><b>swtshell</b> is a remote shell for accessing data from any pvAccess server.
+For example it can be used as a remote shell for accessing a pvIOCJava.
+</p>
+
+<p><b>swtshell</b> is a tool for a related set of products:</p>
+<dl>
+  <dt>pvData</dt>
+    <dd>pvData (Process Variable Data) defines and implements an efficent way
+      to store, access, and transmit memory resident structured data</dd>
+  <dt>pvAccess</dt>
+    <dd>pvAccess is network support for transmitting pvData.</dd>
+  <dt>pvIOC</dt>
+    <dd>A pvIOC is a network accessable smart real time database. The database
+      consists of memory resident records. Each record has a name that is
+      unique within the local area network and contains a top level pvData
+      structure. Each field of a record can optionally have support code
+      attached to it. The support is called when a request is made to process
+      the record. The support code is what makes the record "smart". A pvAccess
+      server is provided so that the records can be accesed via the network.
+    </dd>
+  <dt>pvService</dt>
+    <dd>A middle layer for implementing services.</dd>
+</dl>
+
+<p>Each of the products has a Java and a C++ implementation.</p>
+
+<p>The products are all part of the <a
+href="http://epics-pvdata.sourceforge.net/">V4</a> implementation of <a
+href="http://www.aps.anl.gov/epics/">Experimental Physics and Industrial
+Control System.</a></p>
+
+<h2 class="nocount">Status of this Document</h2>
+
+<p>This is the 12-Mar-2013 version of swtshellJava.</p>
+
+<div id="toc">
+<h2 class="nocount" style="page-break-before: always">Table of Contents</h2>
+</div>
+
+<div id="contents" class="contents">
+
+<div>
+
+<h2>Introduction</h2>
+
+<p>This product is available via an <a
+href="http://epics-pvdata.sourceforge.net/LICENSE.html">open source
+license</a></p>
+<p><b>Disclaimer:</b> <b>swtshell</b> provides quite useful features but
+the GUI features could be greatly improved.
+The author would welcome a replacement.
+The new tool could use another language and GUI toolkit,
+for example a PyQT based tool.
+The only requirement is that the basic functionality is supported.
+As soon as a good replacement tool is available, <b>swtshell</b>
+will be abandoned.
+
+<p><b>swtshell</b> is a remote shell for accessing a pvAcccess server.
+It can access records in a <b>pvIOCJava</b> but also
+any other server that implements a remote pvAccess server.
+Some example of what it can access are:</p>
+<dl>
+  <dt>V4 services</dt>
+    <dd>Any service that is implemented via as a pvAccess server</dd>
+  <dt>EPICS base records</dt>
+     <dd>These can be accessed in two ways:
+         <dl>
+            <dt>pvAccess</dt>
+               <dd>This is possible if the EPICS base IOC has <b>pvaSrv</b> running</dd>
+            <dt>V3 Channel access</dt>
+               <dd>This can be done by selecting <b>caV3</b> as the channel provider</dd>
+         </dl>
+         </dd>
+</dl>
+<p>A caveat is that some of the features described in this document
+are only available if the server has support for the special features
+described in the last section of this document.
+Most special features are provided via a remote procedure call
+that  is implemented via <b>`channelRPC</b> or <b>channelPutGet</b>.
+At the present time only <b>pvIOCJava</b> implements these features.
+It does this via special records.
+But even without the special features <b>swtshell</b> is a useful tool.
+It is a <b>GUI</b> tool that provides features similar
+to the command line tools <b>pvget</b>, <b>pvput</b>, and <b>eget</b></p>
+<p>This document has the following sections:</p>
+<dl>
+   <dt>Getting Started</dt>
+     <dd>This explains how to start an example IOC and swtshell.</dd>
+   <dt>Simple Example</dt>
+      <dd>A simple example of using swtshell</dd>
+   <dt>Basic Features</dt>
+      <dd>The basic features of swtshell</dd>
+   <dt>Special Features</dt>
+      <dd>The special features that can be provided by a server.</dd>
+</dl>
+
+
+<h2>Getting Started</h2>
+
+<p>In order to use <b>swtshell</b> and the example <b>JavaIOC</b>,
+the following projects must be installed and built:</p>
+<dl>
+  <dt>pvDataJava</dt>
+  <dt>pvAccessJava</dt>
+  <dt>pvIOCJava</dt>
+  <dt>swtshellJava</dt>
+</dl>
+
+<p><b>swtshell</b> is developed as an eclipse project with package name
+<b>org.epics.swtshell</b>.
+It can be started under eclipse or as a standalone Java application.
+This section describes how to start both an example JavaIoc and swtshell as
+standalone Java applications.</p>
+<p> Since swtshell is a remote shell there must be one or more pvAccess servers running
+or there is nothing it can do.
+An example JavaIOC is provided with this project and is used for
+the examples for this document.</p>
+<p>In the top level directory of this project there are two files:
+<dl>
+  <dt>startExample.zip</dt>
+     <dd>A zip file for starting the example Java IOC.</dd>
+  <dt>swtshell.zip</dt>
+     <dd>A zip file for starting swtshell</dd>
+</dl>
+<p>Copy these two files to your own area and unzip them.
+The files should work on any unix like system. For example linux and darwin.
+The next two sections explain how to use them.</p>
+<h3>startExample</h3>
+<p>Directory <b>startExample</b> has two files: <b>source</b> and <b>startExample</b>
+File <b>source</b> must be modified. It is:</p>
+<pre>
+# The following assumes that pvData, pvAccess, and javaIOC are eclipse projects in /home/hg
+export IOCNAME=laptop
+export WORKSPACE=/home/hg
+export PVDATA=${WORKSPACE}/pvDataJava
+export PVACCESS=${WORKSPACE}/pvAccessJava
+export JAVAIOC=${WORKSPACE}/pvIOCJava
+export CLASSPATH=${CLASSPATH}:${PVDATA}/bin
+export CLASSPATH=${CLASSPATH}:${PVACCESS}/bin
+export CLASSPATH=${CLASSPATH}:${JAVAIOC}/bin
+export CLASSPATH=${CLASSPATH}:${JAVAIOC}jar/CAJ.jar
+export CLASSPATH=${CLASSPATH}:${JAVAIOC}jar/JCA.jar
+</pre>
+<p>The definition of <b>WORKSPACE</b> must be changed.</b>
+In addition you may want to change the definition of <b>IOCNAME</b></p>
+<p>File <b>startExample</b> should work as is. Note that additional
+<b>-structures</b> and <b>-records</b> definitions can be added as desired.</p>
+<p>To start the example IOC just execute the command:</p>
+<pre>
+./startExample
+</pre>
+<h3>swtshell</h3>
+<p>Directory <b>swtshell</b> has two files: <b>source</b> and <b>swtshell</b>
+File <b>source</b> must be modified. It is:</p>
+<pre>
+# The following assumes that pvData, pvAccess, and swtshell are eclipse projects in /home/hg
+export WORKSPACE=/home/hg
+export PVDATA=${WORKSPACE}/pvDataJava
+export PVACCESS=${WORKSPACE}/pvAccessJava
+export SWTSHELL=${WORKSPACE}/swtshellJava
+export CLASSPATH=${CLASSPATH}:${PVDATA}/bin
+export CLASSPATH=${CLASSPATH}:${PVACCESS}/bin
+export CLASSPATH=${CLASSPATH}:${SWTSHELL}/bin
+# The following MUST be changed to locate the release of swt on your system
+export CLASSPATH=${CLASSPATH}:/usr/lib64/eclipse/swt.jar
+</pre>
+<p>The definitions of <b>WORKSPACE</b>  and the last
+<b>CLASSPATH</b>must be changed.</b></p>
+<p>File <b>swtshell</b> should work as is.</p>
+<p>To start the example IOC just execute the command:</p>
+<pre>
+./swtshell
+</pre>
+
+<h2>Simple Example</h2>
+<p><b>Note:</b> All examples assume that <b>startExample</b> is running</p>
+<p>When <b>swtshell</b> is started the following <b>Main Window</b> appears:</p>`
+<center>
+<p><img src="./swtshell.gif" alt="swtshell" /></p>
+</center>
+
+<p>Click on the <b>channelList</b> button. The following appears:</p>
+<center>
+<p><img src="./channelListInitial.gif" alt="channelListInitial" /></p>
+</center>
+
+<p><b>NOTE</b>: After text is typed into any text input window, the enter key
+must be pressed.</p>
+
+<p>Enter <b>laptop</b> for the <b>iocname</b> and the click in the 
+<b>regularExpression</b> window. The window now becomes.</p>
+<center>
+<p><img src="./channelListAfter.gif" alt="channelListAfter" /></p>
+</center>
+
+
+<p>Back in the main window click on <b>monitor</b>.
+The following appears:</p>
+<center>
+<p><img src="./monitor.gif" alt="monitor" /></p>
+</center>
+
+<p>Click the connect button and the following window appears:</p>
+
+<center>
+<p><img src="./connectChannel.gif" alt="connectChannel" /></p>
+</center>
+
+<p>In the <b>channelName</b> box enter <b>counterMonitor</b> or just copy and paste this
+name from the <b>channelList</b> window.
+After the name is entered this window disappears and you are back to the
+monitor window.</p>
+<p>In the <b>monitor</b> window click on <b>createMonitor</b>
+and then <b>start</b> and a short time later click <b>stop</b>
+The  monitor window now looks something like:</p>
+<center>
+<p><img src="./monitorActive.gif" alt="monitorActive" /></p>
+</center>
+<p>Congratulations!! You have just used swtshell.</p>
+
+<h2>Basic Features</h2>
+
+<h3>Main Window</h3>
+
+<p>The following window appears when swtshell is started:</p>
+
+<center>
+<p><img src="./swtshell.gif" alt="swtshell" /></p>
+</center>
+
+<p>The window has the following buttons:</p>
+<dl>
+  <dt>channelList</dt>
+    <dd>This obtains a set of the channels in a javaIOC. </dd>
+  <dt>process</dt>
+    <dd>channelProcess</dt>
+  <dt>get</dt>
+    <dd>channelGet</dd>
+  <dt>put</dt>
+    <dd>channelPut</dd>
+  <dt>putGet</dt>
+    <dd>channelPutGet.
+     It provides access to many of the special features described in the last section.
+    </dd>
+  <dt>channelRPC</dt>
+    <dd>channelRPC.
+     It provides access to many of the special features described in the last section.
+    </dd>
+  <dt>monitor</dt>
+     <dd>monitor support via Channel.createMonitor</dd>
+  <dt>array</dt>
+    <dd>channelArray, which provides access to a subset of a scalar array.</dd>
+  <dt>structureArray</dt>
+    <dd>structureArray, which provides access to a subset of a structure array.</dd>
+</dl>
+
+<p>When any button is clicked a new window appears.
+Each type of window is described in a separate subsection.
+Note that multiple windows of each type can be created at will.
+</p>
+
+
+<h3>channelList</h3>
+<p><b>NOTE:</b> In order for this to work a channel provider must implement
+the channelList special feature described in the last section of this document.
+This means that it has a channel named <b>&lt;iocname&gt;recordListPGRPC</b>
+where <b>&lt;iocname&gt;</b> is the value of the
+environment varable <b>&lt;IOCNAME&gt;</b>.
+This channel must follow the semantics of this special feature.</p>
+
+
+<p>This obtains a list of a subset, selected by a regular expression, of the
+records in a javaIOC. A name can be selected and dropped into a connect window
+descibed in the next sub-section.</p>
+
+<p>When channelList is selected from the main swtshell window the following
+window appears.</p>
+
+<center>
+<p><img src="./channelListInitial.gif" alt="channelListInitial" /></p>
+</center>
+
+<p>The provider is normally pvAccess.
+The iocname must be specified. If the example Java IOC is started as shown above
+then just enter <b>laptop</b>.
+A regular expression ( A <b>grep</b> style expression)  selects the set of records to list.
+Entering <b>.*RPC</b> selects all records with names ending in <b>RPC</b>.
+The default regular expression <b>.*</b> selects all records. When the enter key is pressed in the
+regularExpression, the list of channels is read via channel access
+and displayed. For example</p>
+
+<center>
+<p><img src="./channelListRPC.gif" alt="channelListRPC" /></p>
+</center>
+
+<h3>Connecting to a Channel</h3>
+
+<p>The process,get, put, putGet, channelRPC, monitor, and array windows all
+have a connect button. When this button is pressed the following window
+appears:</p>
+
+<center>
+<p><img src="./connectChannel.gif" alt="connectChannel" /></p>
+</center>
+
+<p>The provider is normally <b>pvAccess</b> but <b>caV3</b> can also be
+selected to connect to a V3 IOC record via the V3 channel access.
+You must enter the <b>channelName</b> of the desired channel.
+Note that the channel name can
+be obtained from the channelList described in the previous sub-section. When
+return is clicked a request is made to create a channel to the selected channelName
+and control is returned to the window that has the connect button.</p>
+
+<h3>Creating a Request</h3>
+
+<p>The get, put, putGet and monotor windows all have a createRequest button,
+which can activated after connecting to a channel. createRequest allows you to
+select an arbitarary set of fields from the PVRecord to which the channel is
+connected. All also show a text window with the curent request string
+displayed. This text window can be modified or the createRequest button can be
+clicked to use introspection to select a set of fields.</p>
+
+<p>When the createRequest button is pressed the following window appears:</p>
+
+<center>
+<p><img src="./createRequest.gif" alt="createRequest" /></p>
+</center>
+
+<p>Again the text window can be edited. If options are provided for fields
+thety must be manually entered.</p>
+
+<p>When the introspect button is clicked a window like the following appears.
+The details depend on the record structure.</p>
+
+<center>
+<p><img src="./getSubSet.gif" alt="getSubSet" /></p>
+</center>
+
+<p>This window allows the user to select an arbitrary set of fields from the
+PVRecord to which the channel is attached. When the arrow for a structure field
+is clicked the fields for that structure appear. A field is selected by
+clicking the button next to the field name. If a structure field is selected
+the entire structure is selected.</p>
+
+<p>A request can also be specified via a text window and then clicking the
+<b>done</b> button.
+The rules for specifying the request via a text string are explained in 
+<a
+href="http://epics-pvdata.sourceforge.net/informative/pvRequest.html">
+pvRequest.html</a>
+</p>
+<h3>process</h3>
+
+<p>The following window appears when the process button is pushed:</p>
+
+<center>
+<p><img src="./process.gif" alt="process" /></p>
+</center>
+
+<p>The connect button is for connecting and disconnecting to/from a channel.
+The createProcess button is for creating and destroying a channelProcess
+request. The process button sends a process request to the channel access
+server.</p>
+<h3>get</h3>
+
+<p>Clicking the get button of the swtshell window creates a window
+for issuing channelGet requests:</p>
+<center>
+<p><img src="./getInitial.gif" alt="getInitial" /></p>
+</center>
+
+<p>The following shows the window after connecting to a channel, clicking
+createGet, and clicking get:</p>
+<center>
+<p><img src="./get.gif" alt="get" /></p>
+</center>
+
+<p>The first row has the following widgets:</p>
+<dl>
+  <dt>connect</dt>
+    <dd>This was described above. Note that after connecting to a channel the
+      button becomes disconnect.</dd>
+  <dt>createRequest</dt>
+    <dd>This was described above. Note that the text window can also be
+    edited.</dd>
+  <dt>crateGet</dt>
+    <dd>Create and destroy a channelGet request.</dd>
+  <dt>get</dt>
+    <dd>Issue a get request. The result is shown in the text window.</dd>
+  <dt>dump</dt>
+    <dd>This shows the current data values.</dd>
+</dl>
+
+<h3>put</h3>
+
+<p>The following window appears when the put button is pushed:</p>
+
+<center>
+<p><img src="./put.gif" alt="put" /></p>
+</center>
+
+<p>Except for put the top row is just like get.</p>
+
+<p>When the put button is clicked then what happens depends of how many fields
+where selected from the PVRecord. If only a single scalar or array field was
+selected, then a text entry box apppears. When a value is entered and the
+return key is pressed then this value is sent via channel access.</p>
+
+<p>If more than a single scalar or array field was selected then when put is
+clicked a window appears that allows the user to provide values to each
+scalar or array field of the selected fields.
+An example window is:</p>
+
+<center>
+<p><img src="./getValue.gif" alt="getValue" /></p>
+</center>
+
+<p>This display allows the user to give values to any of the scalar or array
+fields.</p>
+
+<p>If a primitive or array of primitives is selected then when edit is clicked
+the following happens: </p>
+<ul>
+  <li>The text entry window shows the current value.</li>
+  <li>After text is entered and the enter key presssed the data is put in the
+    PVStructure created as a result of createRequest.</li>
+</ul>
+
+<p>When done is clicked the modified fields are sent to the channel access
+server and written to the PVRecord.</p>
+<h3>putGet</h3>
+
+<p>The following window appears when the putGet button is pushed. It is similar
+to get and put except that both a putRequest and a getRequest must be
+specified.</p>
+
+<center>
+<p><img src="./putGet.gif" alt="putGet" /></p>
+</center>
+
+<p>A typical use of putGet is to issue a remote procedure call. An RPC record,
+by convention, has the following:</p>
+<ol>
+  <li>A top level feld named <b>arguments</b>.</li>
+  <li>A top level field named <b>result</b>.</li>
+  <li>Support that implements the RPC semantics.</li>
+</ol>
+
+<p>A client creates a <b>channelPutGet</b> as follows:</p>
+<ol>
+  <li>Connects to a channel</li>
+  <li>Optionally creates a get and/or put request.
+     If a record follows the field naming conventions for supporting
+     channelPutGet then neither is  necessary. If it is necessary either use
+     the <b>createPutRequest</b> and <b>createGetRequest</b> buttons
+     or directly enter into the text window.</li>
+   <li>Click the <b>createPutGet</b> button.</li>
+</ol>
+
+<p>A client issues an RPC request as follows:</p>
+<ol>
+  <li>Gives values to the arguments.
+    This is similar to how values were entered for <b>put</b>.
+  </li>
+  <li>issues a putGet</li>
+  <li>Receives the result values.</li>
+</ol>
+<p>The last section of this document shows many examples of using 
+channelPutGet.</p>
+
+<h3>channelRPC</h3>
+
+<p>The following window appears when the channelRPC button is pushed. A
+channelRPC returns a new PVStructure for each request. The record must support
+a channelRPC request.</p>
+
+<center>
+<p><img src="./channelRPC.gif" alt="channelRPC" /></p>
+</center>
+
+<p>One of the features in the last section of this document
+is <b>recordDump</b>. This is an example of a channelRPC request.</p>
+
+<p>The createArgument and argument controls are used to create the
+introspection interface for the data the client will pass to the server. The
+text window that shows the value "argument" is the field name of the top level
+structure for the argument. It can be changed to any valid field name, e. g.
+"NTTable". When the createArgument button is clicked the following window
+appears:</p>
+
+<center>
+<p><img src="./createStructure.gif" alt="createStructure" /></p>
+</center>
+
+<p>You enter a fieldName and select a type. If the type is scalar or
+scalarArray then you must also select a scalarType. When you click add the new
+field will appear in the console window. If you select type structure or
+structureArray then when you select add a new structureArray window will
+appear. You follow the same procedure to create a sub structure.When you click
+done the createStructure window disappears. </p>
+
+<p>The default argument is a <b>NTNameValue</b>, which is the following type of
+structure:</p>
+<pre>
+structure
+    string[] name
+    string[] value
+</pre>
+<p>
+where
+<dl>
+   <dt>name</dt>
+     <dd>An array of names.</dd>
+   <dt>value</dt>
+      <dd>An array of values.</dd>
+</dl>
+<b>NOTE:</b> The default only works if that is what the server expects.</p>
+<p>Assuming the default argument, when <b>channelRPC</b> is selected the 
+following window appears:</p>
+
+<center>
+<p><img src="./rpcDefaultArg.gif" alt="rpcDefaultArg" /></p>
+</center>
+<p>A value must be given to both <b>name</b> and <b>value</b>
+For example set <b>name</b> to <b>name1,name2</b> and <b>value</b> to <b>value1,value2</b>
+To set values for <b>name</b> do the followimng:
+<ul>
+   <li>Click <b>name</b></li>
+   <li>Click <b>Edit</b></li>
+   <li>In the text window after <b>Edit</b> enter <b>name1,name2</b></li>
+</ul>
+<p>When the argument has been completely specified click <b>Done</b> and 
+the RPC request is issued.</p>
+
+<h3>monitor</h3>
+
+<p>The following window appears when the monitor button is pushed:</p>
+
+<center>
+<p><img src="./monitor.gif" alt="monitor" /></p>
+</center>
+
+<p>The controls in the first row are similar to get and put. Note that the
+queueSize can be set.</p>
+
+<p>The other controls provide:</p>
+<dl>
+  <dt>serverInfo</dt>
+    <dd>The status of the connection is shown </dd>
+  <dt>simulateDelay</dt>
+    <dd>This is for testing channel access. If a non-zero value is specified a
+      delay occurs after each monitor is received.</dd>
+</dl>
+<p>When start is clicked monitoring is started.
+It changes to a stop button while monitoring is active.</p>
+<h3>array</h3>
+
+<p>The following window appears when the array button is pushed:</p>
+
+<center>
+<p><img src="./array.gif" alt="array" /></p>
+</center>
+
+<p>This window has a connect/disconnect button and a createArray/destroyArray
+button. It has a text entry for subField. The get button issues a array get
+request. The offset and count can be specified. The result is written into the
+value field of the put row. The put button issues a put array request. The
+offset can be specified. The value field provides the array values. The
+setLength button is used to set the length and/or capacity of the array. A
+value of -1 means leave as is.</p>
+<h3>structureArray</h3>
+
+<p>This is used to get and modify elements of a PVStructureArray. You must get
+before issuing a put. The puts will modify the data obtained via the get and
+then put the data back.</p>
+
+<p>The following window appears when the structureArray button is pushed:</p>
+
+<center>
+<p><img src="./structureArray.gif" alt="structureArray" /></p>
+</center>
+
+<p>This window has a connect/disconnect button and a createArray/destroyArray
+button. It has a text entry for subField. The get button issues a array get
+request. The offset and count can be specified. The result is written to the
+consoleText window. You must issue a get before using put.</p>
+
+<p>The put row acts on the data received from a put. You change elements by
+giving a value to index and clicking putElement. A tree structured window just
+like for put appears. This is changing the local data. When you click put the
+data is written to the actual record. The setLength button is used to set the
+length and/or capacity of the array. A value of -1 means leave as is.</p>
+
+
+<h2>Special Features</h2>
+<p>As mentioned above it is possible for a channel provider to add support
+for provider specific functions.
+This section describes special features that are provider by pvIOCJava.
+Some of these features or other features could be provided
+by other providers.</p>
+
+<p>A provider can implement a feature via any <b>channel</b> method desired.
+The special features described in this section expect the client
+to use the following:</p>
+<dl>
+  <dt>monitor</dt>
+    <dd>databaseMessages</dd>
+  <dt>channelRPC</dt>
+     <dd>recordDump</dd>
+  <dt>channelPutGet</dt>
+     <dd>All the other special features</dd>
+</dl>
+
+<h3>databaseMessages</h3>
+  <p>The Java IOC provides the ability to traps all message generated
+   because of record processsing
+   and makes them available to any pvAccess client via a special record.
+   The client can just monitor the record.
+   It also has support for a record that can generate messages.
+   </p>
+   <p><b>&lt;iocname&gt;recordListener</b> is the record that traps all messages.
+   <b>&lt;iocname&gt;generateMessage</b> is the record that generates messages.</p>
+   <p>The following windows show an example:</p>
+<center>
+<p><img src="./recordListener.gif" alt="recordListener" /></p>
+<p><img src="./generateMessage.gif" alt="generateMessage" /></p>
+</center>
+<p>Note that the put window is connected to <b>laptopgenerateMessage</b>.
+
+<h3>recordDump</h3>
+    <p>This is record that is accessed via a <b>channelRPC</b> request.
+    It returns the current values of a top level <b>PVStructure</b>,
+    which can be either a record or a structure from one ot two databases: <b>master</b>
+    or <b>beingInstalled</b>.</p>
+<p>The record accepts a pvRequest argument that must be a <b>NTNameValue</b> 
+The allowed set of names and associated value is:</p>
+<dl>
+  <dt>database</dt>
+    <dd>Allowed value is either <b>master</b> or <b>beingInstalled</b>
+     The default is <b>master</b>. You have to be a real expert to use <b>beingInstalled</b>.
+    </dd>
+  <dt>record</dt>
+     <dd>Value is the name of a record in the selected database.
+      Note that the name can be copied from <b>channelList</b> described above.
+     </dd>
+   <dt>structure</dt>
+      <dd>Value is the name of a top level PVStructure in the database.
+       Note that the <b>structureList</b> special record described below can be used
+       to determine the list of the names of the top level PVStructures in the database.
+      </dd>
+</dl>
+<p>By far the most useful argument is to specify only a single name.value pair
+with the name being <b>record</b>.
+An example is:</p>
+<center>
+<p><img src="./recordDump.gif" alt="recordDump" /></p>
+</center>
+
+<h3>iocShow</h3>
+
+<p>This returns information about a Java IOC via a channelPutGet request.
+<b>&lt;iocname&gt;iocShow</b> is the record that implements the request.
+After connecting and creating the channelPutGet the window will appear as:</p>
+<center>
+<p><img src="./iocShow.gif" alt="iocShow" /></p>
+</center>
+<p>When you click on the <b>putGet</b> button a <b>getValue</b> window appears.
+The following shows the arguments and in particular the value of choices.</p>
+<center>
+<p><img src="./iocShowGetValue.gif" alt="iocShowGetValue" /></p>
+</center>
+<p>You must give a value to <b>index</b>.
+<p>To select a choice:</p>
+<ul>
+  <li>Click on <b>index</b></li>
+  <li>Click on <b>Edit</b></li>
+  <li>In text box enter the index of the desired choice.</li>
+  <li>Click on <b>Done</b></li>
+</ul>
+<p>The results will appear in the <b>putGet</b> window.</p>
+<p>To show the threads created by the JavaIOC set
+<b>index</b> to <b>1</b>. The following appears:</p>
+<center>
+<p><img src="./iocShowThreads.gif" alt="iocShowThreads" /></p>
+</center>
+<p>The complete set of choices is:</p>
+<dl>
+  <dt>showBadRecords</dt>
+    <dd>Show the state of all records that are either not in support state <b>ready</b>s
+     <b>or</b> is currently in run state <b>active</b>
+     </dd>
+  <dt>showThreads</dt>
+      <dd>Show all Java IOC threads</dd>
+  <dt>showMemory</dt>
+      <dd>Show memory used by Java IOC.</dd>
+   <dt>garbageCollect</dt>
+      <dd>Force a garbage collection</dd>
+</dl>
+
+<h3>recordShow</h3>
+<p>This returns information about a record in a Java IOC via a channelPutGet request.
+<b>&lt;iocname&gt;recordShow</b> is the record that implements the request.
+After connecting and creating the channelPutGet and clicking of <b>putGet</b>
+A <b>getValue</b> window appears. Opening up the arguments at selecting <b>choices</b>
+<b>getValue</b> appears as:</p>
+<center>
+<p><img src="./recordShowGetValue.gif" alt="recordShowGetValue" /></p>
+</center>
+<p>You must give a value to <b>recordName</b> and to <b>index</b>.
+<p>To specify the <b>recordName</b></p>
+<ul>
+  <li>Click on <b>recordName</b></li>
+  <li>Click on <b>Edit</b></li>
+  <li>In text box enter the name of the desired record.
+   A value can be copied and pasted from <b>channelList</b>
+  </li>
+</ul>
+<p>To select a choice:</p>
+<ul>
+  <li>Click on <b>index</b></li>
+  <li>Click on <b>Edit</b></li>
+  <li>In text box enter the index of the desired choice.</li>
+  <li>Click on <b>Done</b></li>
+</ul>
+<p>The results will appear in the <b>putGet</b> window.
+For example if You set <b>recordName</b> to <b>counterMonitor</b>
+and <b>index</b> to <b>0</b> the following appears:</p>
+<center>
+<p><img src="./recordShowState.gif" alt="recordShowState" /></p>
+</center>
+<p>The complete set of choices is:</p>
+<dl>
+  <dt>showState</dt>
+      <dd>Show the current state of the record.
+      </dd>
+  <dt>setTraceOn</dt>
+      <dd>Start trace processing of the record.
+       The output appears on the Java IOC console.
+      </dd>
+   <dt>setTraceOff</dt>
+      <dd>Stop trace processing.
+      </dd>
+   <dt>timeProcess</dt>
+      <dd>Time how long it takes to process a record.`
+      </dd>
+   <dt>setEnableOn</dt>
+      <dd>Allow a record to process.
+      </dd>
+   <dt>setEnableOff</dt>
+      <dd>Enable record processing.
+      </dd>
+   <dt>releaseProcessor</dt>
+      <dd>Release the current record processor if a record is stuck.
+      </dd>
+</dl>
+<h3>structureList</h3>
+<p>This returns the names of structures in a Java IOC datebase.
+<b>&lt;iocname&gt;structureList</b> is the record that implements the request.
+After connecting and creating the channelPutGet and clicking om <b>putGet</b>
+A <b>getValue</b> window appears. Opening up the arguments and selecting <b>regularExpression</b>
+<b>getValue</b> appears as:</p>
+<center>
+<p><img src="./structureListGetValue.gif" alt="structureListGetValue" /></p>
+</center>
+<p>The <b>database</b> can be <b>master</b> or <b>beingCreated</b>. The default is <b>master</b>
+If <b>regularExpression</b> is given the value shown then when <b>Done</b> is clicked
+the following appears:</p>
+<center>
+<p><img src="./structureListResult.gif" alt="structureListResult" /></p>
+</center>
+<h3>recordList</h3>
+<p>Returns the names of structures in the database.
+This is similar to <b>structureList</b> except that it returns the names of records
+instead of structures.
+This is what <b>channelList</b> calls so no example will be shown.</p>
+<h3>setSupportState</h3>
+<p>This is used to issue support state commands to a record. The commands are:</p>
+<dl>
+  <dt>initialize</dt>
+    <dd>This is a request to put the record into state <b>readyForStart</b>.
+  <dt>start</dt>
+    <dd>This is a request to put the record into state <b>ready</b>.
+  <dt>stop</dt>
+    <dd>This is a request to put the record into state <b>readyForStart</b>.
+  <dt>uninitialize</dt>
+    <dd>This is a request to put the record into state <b>readyForInitialize</b>.
+</dl>
+<p>An attempt is made to put the record into the requested state no matter what
+the initial state is. Note that if the support attached to the record finds a problem
+the record may not reach the desired state.
+A record, after an IOC is initialized and started, is normally in the state <b>ready</b>,
+which means that it can be processed.</p>
+<p><b>NOTE:</b> changing the support state of a record is a serious operation,
+but it is necessary in order to do things like deleting a record.
+If the support state is changed while any clients like pvAccess are connected to
+the record they will be told to disconnect from the record.</p>
+<p>Before the support state can be changed the record must first be disabled.
+This can be done via the <b>recordShow</b> discussed above.
+Once the record is disabled the state can be changed to any desired state.
+The most common request is <b>uninitialize</b>,
+which must be done before deleting a record.
+Another reason to change the state if a record is "stuck" for some reason.
+Issuing the commands <b>uninitialize</b> and then <b>start</b> may clear the problem.
+This can be useful when diagnosing problems on an active system.</p>
+<p>The record
+<b>&lt;iocname&gt;supportStateSet</b> is the record that changes the state.
+The following shows an example of creating a <b>channelPutGet</b>window for
+issuing <b>supportStateSet</b> requests:</p>
+<center>
+<p><img src="./supportStateSetConnect.gif" alt="supportStateSetConnect" /></p>
+</center>
+<p>The following shows the arguments that the record provides.
+It also shows the set of choices that are provided.</p>
+<center>
+<p><img src="./supportStateSet.gif" alt="supportStateSet" /></p>
+</center>
+<p>You must give values to <b>recordName</b> and to <b>index</b>.
+For example <b>simpleCounter</b> and <b>3</b> will put record simpleCounter
+into state readyForInitialize</p>
+
+<h3>recordRemove</h3>
+<p>This removes a record from the IOC database.
+<b>&lt;iocname&gt;recordRemovePGRPC</b>
+is the record that implements the request.
+Just create a channelPutGet request to this record.
+The argument consists of the single argument <b>recordName</b>.
+When a putGet request is issued the record is removed from the IOC database.
+Any connected client are automatically disconnected are the record
+is told to stop and uninitialize.</p>
+
+<h3>addRecords</h3>
+<p>This adds records to the IOC database.
+<b>&lt;iocname&gt;addRecordsPGRPC</b>
+is the record that implements the request.
+The client creates a channelPutGet request to this record.
+The argument consists of the single argument <b>fileName</b>.
+The file must have a valid set of <b>xml</b> statements as defined by <b>pvIOCJava</b></p>
+<p>The following shows how to connect to the record:</p>
+<center>
+<p><img src="./addRecordsInitial.gif" alt="addRecordsInitial" /></p>
+</center>
+<p><b>swtshell.zip</b> includes two files: addRecords.xml  addRecordsFail.xml.
+These can be used to demonatrate how to use addRecords.
+The first will result in successfully adding records and the second will fail.</p>
+<p>The following two windows use the file that is valid.
+The first window is the request window:</p>
+<center>
+<p><img src="./addRecordsGoodRequest.gif" alt="addRecordsGoodRequest" /></p>
+</center>
+<p>The channelPutGet window shows:</p>
+<center>
+<p><img src="./addRecordsGoodResult.gif" alt="addRecordsGoodResult" /></p>
+</center>
+<p>The following two windows use the file that is not valid.
+The first window is the request window:</p>
+<center>
+<p><img src="./addRecordsBadRequest.gif" alt="addRecordsBadRequest" /></p>
+</center>
+<p>The channelPutGet window shows:</p>
+<center>
+<p><img src="./addRecordsBadResult.gif" alt="addRecordsBadResult" /></p>
+</center>
+
+</div>
+</body>
+</html>
