@@ -173,9 +173,15 @@ public class PutGetFactory {
             } else if(object==createGetRequestButton) {
                 channelClient.createGetRequest(shell);
             } else if(object==createPutGetButton) {
+                State state = stateMachine.getState();
+                if(state==State.readyForCreatePutGet) {
                 stateMachine.setState(State.creatingPutGet);
                 PVStructure pvStructure = CreateRequestFactory.createRequest(requestText.getText(),requester);
                 channelClient.createPutGet(pvStructure);
+                } else {
+                    channelClient.destroyPutGet();
+                    stateMachine.setState(State.readyForCreatePutGet);
+                }
             } else if(object==putGetButton) {
                 GUIData guiData = GUIDataFactory.create(shell);
                 guiData.get(channelClient.getPutPVStructure(),channelClient.getPutBitSet());
@@ -283,6 +289,13 @@ public class PutGetFactory {
             void createPutGet(PVStructure pvRequest) {
                 channelPutGet = channel.createChannelPutGet(this,pvRequest);
                 return;
+            }
+            void destroyPutGet() {
+                ChannelPutGet channelPutGet = this.channelPutGet;
+                if(channelPutGet!=null) {
+                    this.channelPutGet = null;
+                    channelPutGet.destroy();
+                }
             }
             void disconnect() {
                 Channel channel = this.channel;

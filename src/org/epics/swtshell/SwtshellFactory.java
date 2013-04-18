@@ -81,6 +81,14 @@ public class SwtshellFactory {
                 }
             });
             
+            Button getFieldDB = new Button(shell,SWT.PUSH);
+            getFieldDB.setText("getField");
+            getFieldDB.addSelectionListener( new SelectionAdapter() {
+                public void widgetSelected(SelectionEvent e) {
+                    GetFieldFactory.init(display);
+                }
+            });
+            
             Button processDB = new Button(shell,SWT.PUSH);
             processDB.setText("process");
             processDB.addSelectionListener( new SelectionAdapter() {
