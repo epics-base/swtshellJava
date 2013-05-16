@@ -22,9 +22,10 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelProcess;
 import org.epics.pvaccess.client.ChannelProcessRequester;
 import org.epics.pvaccess.client.ChannelRequester;
+import org.epics.pvaccess.client.CreateRequestFactory;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.Requester;
-import org.epics.pvdata.pv.Status;
+import org.epics.pvdata.pv.*;
 
 /**
  * Shell for processing a channel.
@@ -56,6 +57,7 @@ public class ProcessFactory {
         private static String windowName = "process";
         private Shell shell = null;
         private Button connectButton = null;
+        private Text requestText;
         private Button createProcessButton = null;
         private Button processButton = null;
         private Text consoleText = null; 
@@ -71,19 +73,31 @@ public class ProcessFactory {
             composite.setLayout(rowLayout);
             connectButton = new Button(composite,SWT.PUSH);
             connectButton.setText("disconnect");
-            connectButton.addSelectionListener(this);               
+            connectButton.addSelectionListener(this);
+            
+            Composite requestComposite = new Composite(composite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 1;
+            requestComposite.setLayout(gridLayout);
+            requestText = new Text(requestComposite,SWT.BORDER);
+            GridData gridData = new GridData(); 
+            gridData.widthHint = 200;
+            requestText.setLayoutData(gridData);
+            requestText.setText("record[]");
 
             createProcessButton = new Button(composite,SWT.PUSH);
             createProcessButton.setText("destroyProcess");
-            createProcessButton.addSelectionListener(this);               
+            createProcessButton.addSelectionListener(this);  
+            
             processButton = new Button(composite,SWT.PUSH);
             processButton.setText("process");
-            processButton.addSelectionListener(this);               
+            processButton.addSelectionListener(this);   
+            
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 1;
             consoleComposite.setLayout(gridLayout);
-            GridData gridData = new GridData(GridData.FILL_BOTH);
+            gridData = new GridData(GridData.FILL_BOTH);
             consoleComposite.setLayoutData(gridData);
             Button clearItem = new Button(consoleComposite,SWT.PUSH);
             clearItem.setText("&Clear");
@@ -143,7 +157,8 @@ public class ProcessFactory {
                 State state = stateMachine.getState();
                 if(state==State.readyForCreateProcess) {
                     stateMachine.setState(State.creatingProcess);
-                    channelClient.createProcess();
+                    PVStructure pvRequest = CreateRequestFactory.createRequest(requestText.getText(),requester);
+                    channelClient.createProcess(pvRequest);
                 } else {
                     channelClient.destroyProcess();
                     stateMachine.setState(State.readyForCreateProcess);
@@ -224,8 +239,8 @@ public class ProcessFactory {
                 connectChannel = ConnectChannelFactory.create(shell, this,this);
                 connectChannel.connect();
             }
-            void createProcess() {
-                channelProcess = channel.createChannelProcess(this,null);
+            void createProcess(PVStructure pvRequest) {
+                channelProcess = channel.createChannelProcess(this,pvRequest);
             }
             
             void destroyProcess() {
