@@ -23,22 +23,15 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelArray;
 import org.epics.pvaccess.client.ChannelArrayRequester;
 import org.epics.pvaccess.client.ChannelRequester;
+import org.epics.pvaccess.client.CreateRequestFactory;
 import org.epics.pvdata.factory.ConvertFactory;
-import org.epics.pvdata.factory.FieldFactory;
-import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.pv.Convert;
-import org.epics.pvdata.pv.Field;
-import org.epics.pvdata.pv.FieldCreate;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVArray;
-import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVScalarArray;
-import org.epics.pvdata.pv.PVString;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
-import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.Status;
-import org.epics.pvdata.pv.Structure;
 import org.epics.pvdata.pv.Type;
 
 /**
@@ -58,8 +51,6 @@ public class ArrayFactory {
     }
 
     private static final Convert convert = ConvertFactory.getConvert();
-    private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
-    private static final FieldCreate fieldCreate = FieldFactory.getFieldCreate();
     
     private static class ArrayImpl implements DisposeListener,SelectionListener
     {
@@ -386,14 +377,7 @@ public class ArrayFactory {
             
             
             void createArray() {
-                Field[] fields = new Field[1];
-                String[] fieldNames = new String[1];
-                fields[0] = fieldCreate.createScalar(ScalarType.pvString);
-                fieldNames[0] = "field";
-                Structure structure = fieldCreate.createStructure(fieldNames, fields);
-            	PVStructure pvRequest = pvDataCreate.createPVStructure(structure);
-            	PVString pvFieldName = pvRequest.getStringField("field");
-            	pvFieldName.put(subField);
+            	PVStructure pvRequest = CreateRequestFactory.createRequest(subField,requester);
                 channelArray = channel.createChannelArray(this, pvRequest);
             }
             
