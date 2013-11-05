@@ -289,7 +289,7 @@ public class ChannelListFactory {
             }
             
             private void createPutGet() { 
-                PVStructure pvPutRequest = CreateRequestFactory.createRequest("record[process=true]putField(arguments)getField(result)", this);
+                PVStructure pvPutRequest = CreateRequestFactory.createRequest("record[process=true]putField(argument)getField(result)", this);
                 channelPutGet = channel.createChannelPutGet(this, pvPutRequest);
             }
             
@@ -328,8 +328,8 @@ public class ChannelListFactory {
                 }
                 this.channelPutGet = channelPutGet;
                 if(pvPutStructure!=null && pvGetStructure!=null) {
-                    pvDatabase = pvPutStructure.getStringField("arguments.database");
-                    pvRegularExpression = pvPutStructure.getStringField("arguments.regularExpression");
+                    pvDatabase = pvPutStructure.getStringField("argument.database");
+                    pvRegularExpression = pvPutStructure.getStringField("argument.regularExpression");
                     pvStatus = pvGetStructure.getStringField("result.status");
                     PVArray pvArray = pvGetStructure.getScalarArrayField("result.names", ScalarType.pvString);
                     if(pvArray!=null) pvRecordNames = (PVStringArray)pvArray;

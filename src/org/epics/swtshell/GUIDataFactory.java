@@ -76,6 +76,7 @@ public class GUIDataFactory {
         private static void textMessage(Text text,String message) {
             text.selectAll();
             text.clearSelection();
+            if(message==null) message = "";
             text.setText(message);
         }
         
