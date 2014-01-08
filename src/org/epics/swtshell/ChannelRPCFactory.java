@@ -23,7 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelRPC;
 import org.epics.pvaccess.client.ChannelRPCRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.MessageType;
@@ -139,7 +139,12 @@ public class ChannelRPCFactory {
             gridData.widthHint = 200;
             consoleText.setLayoutData(gridData);
             requester = SWTMessageFactory.create(windowName,display,consoleText);
-            pvRequest = CreateRequestFactory.createRequest("", requester);
+            CreateRequest createRequest = CreateRequest.create();
+            PVStructure pvPutRequest = createRequest.createRequest("record[process=true]putField(argument)getField(result)");
+            if(pvPutRequest==null) {
+            	requester.message(createRequest.getMessage(), MessageType.error);
+            	return;
+            }
             shell.pack();
             createStructure = CreateStructureFactory.create(shell);
             stateMachine.setState(State.readyForConnect);

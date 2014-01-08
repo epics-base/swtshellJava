@@ -23,7 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelArray;
 import org.epics.pvaccess.client.ChannelArrayRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.factory.ConvertFactory;
 import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.MessageType;
@@ -377,7 +377,12 @@ public class ArrayFactory {
             
             
             void createArray() {
-            	PVStructure pvRequest = CreateRequestFactory.createRequest(subField,requester);
+            	CreateRequest createRequest = CreateRequest.create();
+            	PVStructure pvRequest = createRequest.createRequest(subField);
+            	if(pvRequest==null) {
+            		requester.message(createRequest.getMessage(), MessageType.error);
+            		return;
+            	}
                 channelArray = channel.createChannelArray(this, pvRequest);
             }
             

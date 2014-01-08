@@ -23,7 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelPutGet;
 import org.epics.pvaccess.client.ChannelPutGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVStructure;
@@ -157,36 +157,41 @@ public class PutGetFactory {
          * @see org.eclipse.swt.events.SelectionListener#widgetSelected(org.eclipse.swt.events.SelectionEvent)
          */
         public void widgetSelected(SelectionEvent arg0) {
-            if(isDisposed) return;
-            Object object = arg0.getSource(); 
-            if(object==connectButton) {
-                State state = stateMachine.getState();
-                if(state==State.readyForConnect) {
-                    stateMachine.setState(State.connecting);
-                    channelClient.connect(shell);
-                } else {
-                    channelClient.disconnect();
-                    stateMachine.setState(State.readyForConnect);
-                }
-            } else if(object==createPutRequestButton) {
-               channelClient.createPutRequest(shell);
-            } else if(object==createGetRequestButton) {
-                channelClient.createGetRequest(shell);
-            } else if(object==createPutGetButton) {
-                State state = stateMachine.getState();
-                if(state==State.readyForCreatePutGet) {
-                stateMachine.setState(State.creatingPutGet);
-                PVStructure pvStructure = CreateRequestFactory.createRequest(requestText.getText(),requester);
-                channelClient.createPutGet(pvStructure);
-                } else {
-                    channelClient.destroyPutGet();
-                    stateMachine.setState(State.readyForCreatePutGet);
-                }
-            } else if(object==putGetButton) {
-                GUIData guiData = GUIDataFactory.create(shell);
-                guiData.get(channelClient.getPutPVStructure(),channelClient.getPutBitSet());
-                channelClient.putGet();
-            }
+        	if(isDisposed) return;
+        	Object object = arg0.getSource(); 
+        	if(object==connectButton) {
+        		State state = stateMachine.getState();
+        		if(state==State.readyForConnect) {
+        			stateMachine.setState(State.connecting);
+        			channelClient.connect(shell);
+        		} else {
+        			channelClient.disconnect();
+        			stateMachine.setState(State.readyForConnect);
+        		}
+        	} else if(object==createPutRequestButton) {
+        		channelClient.createPutRequest(shell);
+        	} else if(object==createGetRequestButton) {
+        		channelClient.createGetRequest(shell);
+        	} else if(object==createPutGetButton) {
+        		State state = stateMachine.getState();
+        		if(state==State.readyForCreatePutGet) {
+        			stateMachine.setState(State.creatingPutGet);
+        			CreateRequest createRequest = CreateRequest.create();
+        			PVStructure pvStructure = createRequest.createRequest(requestText.getText());
+        			if(pvStructure==null) {
+        				requester.message(createRequest.getMessage(), MessageType.error);
+        				return;
+        			}
+        			channelClient.createPutGet(pvStructure);
+        		} else {
+        			channelClient.destroyPutGet();
+        			stateMachine.setState(State.readyForCreatePutGet);
+        		}
+        	} else if(object==putGetButton) {
+        		GUIData guiData = GUIDataFactory.create(shell);
+        		guiData.get(channelClient.getPutPVStructure(),channelClient.getPutBitSet());
+        		channelClient.putGet();
+        	}
         }
         
         private class StateMachine {

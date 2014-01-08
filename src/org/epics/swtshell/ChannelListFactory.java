@@ -27,7 +27,7 @@ import org.epics.pvaccess.client.ChannelProvider;
 import org.epics.pvaccess.client.ChannelPutGet;
 import org.epics.pvaccess.client.ChannelPutGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorNode;
 import org.epics.pvdata.misc.ThreadPriority;
@@ -289,7 +289,12 @@ public class ChannelListFactory {
             }
             
             private void createPutGet() { 
-                PVStructure pvPutRequest = CreateRequestFactory.createRequest("record[process=true]putField(argument)getField(result)", this);
+            	CreateRequest createRequest = CreateRequest.create();
+                PVStructure pvPutRequest = createRequest.createRequest("record[process=true]putField(argument)getField(result)");
+                if(pvPutRequest==null) {
+                	message(createRequest.getMessage(), MessageType.error);
+                	return;
+                }
                 channelPutGet = channel.createChannelPutGet(this, pvPutRequest);
             }
             

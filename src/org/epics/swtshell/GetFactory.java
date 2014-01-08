@@ -23,7 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelGet;
 import org.epics.pvaccess.client.ChannelGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVStructure;
@@ -178,8 +178,12 @@ public class GetFactory {
                 State state = stateMachine.getState();
                 if(state==State.readyForCreateGet) {
                     stateMachine.setState(State.creatingGet);
-                    PVStructure pvStructure = CreateRequestFactory.createRequest(requestText.getText(),requester);
-                    if(pvStructure==null) return;
+                    CreateRequest createRequest = CreateRequest.create();
+                    PVStructure pvStructure = createRequest.createRequest(requestText.getText());
+                    if(pvStructure==null) {
+                    	requester.message(createRequest.getMessage(), MessageType.error);
+                    	return;
+                    }
                     channelClient.createGet(pvStructure);
                 } else {
                     channelClient.destroyGet();

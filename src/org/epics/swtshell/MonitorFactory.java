@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.Text;
 import org.epics.pvaccess.client.Channel;
 import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorFactory;
@@ -205,8 +205,12 @@ public class MonitorFactory {
             } else if(object==createMonitorButton) {
                 if(state==State.readyForCreateMonitor) {
                     stateMachine.setState(State.creatingMonitor);
-                    PVStructure pvStructure = CreateRequestFactory.createRequest(requestText.getText(),requester);
-                    if(pvStructure==null) return;
+                    CreateRequest createRequest = CreateRequest.create();
+                    PVStructure pvStructure = createRequest.createRequest(requestText.getText());
+                    if(pvStructure==null) {
+                    	requester.message(createRequest.getMessage(), MessageType.error);
+                    	return;
+                    }
                     channelClient.createMonitor(pvStructure);
                 } else {
                     channelClient.destroyMonitor();

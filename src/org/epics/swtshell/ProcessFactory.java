@@ -22,7 +22,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelProcess;
 import org.epics.pvaccess.client.ChannelProcessRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequestFactory;
+import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.*;
@@ -157,7 +157,11 @@ public class ProcessFactory {
                 State state = stateMachine.getState();
                 if(state==State.readyForCreateProcess) {
                     stateMachine.setState(State.creatingProcess);
-                    PVStructure pvRequest = CreateRequestFactory.createRequest(requestText.getText(),requester);
+                    CreateRequest createRequest = CreateRequest.create();
+                    PVStructure pvRequest = createRequest.createRequest(requestText.getText());
+                    if(pvRequest==null) {
+                    	requester.message(createRequest.getMessage(), MessageType.error);
+                    }
                     channelClient.createProcess(pvRequest);
                 } else {
                     channelClient.destroyProcess();
