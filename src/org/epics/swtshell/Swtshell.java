@@ -7,7 +7,7 @@ public class Swtshell {
      */
     public static void main(String[] args) {
         org.epics.pvaccess.ClientFactory.start();
-        org.epics.caV3.ClientFactory.start();
+        org.epics.ca.ClientFactory.start();
         SwtshellFactory.swtshell();
         return;
     }
