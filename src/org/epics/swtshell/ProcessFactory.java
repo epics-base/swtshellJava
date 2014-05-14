@@ -22,10 +22,11 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelProcess;
 import org.epics.pvaccess.client.ChannelProcessRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.pv.MessageType;
+import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
-import org.epics.pvdata.pv.*;
+import org.epics.pvdata.pv.Status;
 
 /**
  * Shell for processing a channel.
@@ -255,7 +256,7 @@ public class ProcessFactory {
                 }
             }
             void process() {
-                channelProcess.process(false);
+                channelProcess.process();
             }
             
             void disconnect() {
@@ -329,10 +330,10 @@ public class ProcessFactory {
                 shell.getDisplay().asyncExec(this);
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelProcessRequester#processDone(Status)
+             * @see org.epics.pvaccess.client.ChannelProcessRequester#processDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelProcess)
              */
             @Override
-            public void processDone(Status status) {
+            public void processDone(Status status, ChannelProcess channelProcess) {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;

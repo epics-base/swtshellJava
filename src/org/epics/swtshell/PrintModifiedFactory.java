@@ -33,7 +33,7 @@ import org.epics.pvdata.pv.Type;
  *
  */
 public class PrintModifiedFactory {
-   
+
     /**
      * Create a PrintModified.
      * @param structureName The structure name.
@@ -43,53 +43,69 @@ public class PrintModifiedFactory {
      * @param text The text widget in which the output will be printed.
      * @return The PrintModified interface.
      */
-    public static PrintModified create(String structureName,PVStructure pvStructure,BitSet changeBitSet,BitSet overrunBitSet,Text text) {
-        return new PrintModifiedImpl(structureName,pvStructure,changeBitSet,overrunBitSet,text);
+    public static PrintModified create(String structureName,Text text) {
+        return new PrintModifiedImpl(structureName,text);
     }
-    
+
     private static class PrintModifiedImpl implements PrintModified{
         private static final Convert convert = ConvertFactory.getConvert();
         private String structureName;
-        private PVStructure pvStructure;
-        private BitSet changeBitSet;
-        private BitSet overrunBitSet;
         private Text text;
+        
         private StringBuilder builder = new StringBuilder();
         private TimeStamp timeStamp = TimeStampFactory.create();
         private PVTimeStamp pvTimeStamp = PVTimeStampFactory.create();
         private Alarm alarm = new Alarm();
         private PVAlarm pvAlarm = PVAlarmFactory.create();
         private PVEnumerated pvEnumerated = PVEnumeratedFactory.create();
-        
-        private PrintModifiedImpl(String structureName,PVStructure pvStructure,BitSet changeBitSet,BitSet overrunBitSet,Text text) {
+        private PVStructure pvStructure = null;
+        private BitSet changeBitSet = null;
+        private BitSet overrunBitSet = null;
+
+        private PrintModifiedImpl(String structureName,Text text) {
             this.structureName = structureName;
-            this.pvStructure = pvStructure;
-            this.changeBitSet = changeBitSet;
-            this.overrunBitSet = overrunBitSet;
+
             this.text = text;
-            if(overrunBitSet==null) {
-                this.overrunBitSet = new BitSet(changeBitSet.size());
-            }
         }
         /* (non-Javadoc)
          * @see org.epics.pvioc.swtshell.PrintModified#print()
          */
-       @Override
-        public void print() {
+        @Override
+        public void print(PVStructure pvStructure,BitSet changeBitSet,BitSet overrunBitSet) {
             builder.setLength(0);
             builder.append(structureName); 
+
             int offset = changeBitSet.nextSetBit(0);
             if(offset<0) {
                 builder.append(" no changes");
             } else {
-                printStructure(pvStructure,0,((offset==0) ? true : false));
+                printStructure(pvStructure,changeBitSet,overrunBitSet,0,((offset==0) ? true : false));
             }
             convert.newLine(builder, 0);
             text.append(builder.toString());
         }
-        
-       
-        private void printStructure(PVStructure pvStructure,int indentLevel,boolean printAll) {
+
+
+        @Override
+        public void setArgs(PVStructure pvStructure, BitSet changeBitSet, BitSet overrunBitSet)
+        {
+            this.pvStructure = pvStructure;
+            this.changeBitSet = changeBitSet;
+            if(overrunBitSet==null) overrunBitSet = new BitSet(changeBitSet.size());
+            this.overrunBitSet = overrunBitSet;
+        }
+        @Override
+        public void print() { 
+            if(pvStructure==null) {
+                throw new IllegalArgumentException("setArgs not called first");
+            }
+            print(pvStructure,changeBitSet,overrunBitSet);
+            pvStructure = null;
+            changeBitSet = null;
+            overrunBitSet = null;
+
+        }
+        private void printStructure(PVStructure pvStructure,BitSet changeBitSet,BitSet overrunBitSet,int indentLevel,boolean printAll) {
             int offset = pvStructure.getFieldOffset();
             if(changeBitSet.get(offset)) printAll = true;
             String fieldName = pvStructure.getFieldName();
@@ -144,7 +160,7 @@ public class PrintModifiedFactory {
                     int nextSet = changeBitSet.nextSetBit(offset);
                     if(nextSet>=0 && (nextSet<pvField.getNextFieldOffset())) printIt = true;
                     if(printAll || printIt) {
-                        printStructure((PVStructure)pvField,indentLevel+1,printAll);
+                        printStructure((PVStructure)pvField,changeBitSet,overrunBitSet,indentLevel+1,printAll);
                     }
                     continue;
                 }

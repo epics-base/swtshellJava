@@ -23,12 +23,17 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelPut;
 import org.epics.pvaccess.client.ChannelPutRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
+import org.epics.pvdata.factory.ConvertFactory;
+import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.misc.BitSet;
+import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.MessageType;
+import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.Status;
+import org.epics.pvdata.pv.Structure;
 
 /*
  * A shell for channelGet.
@@ -60,6 +65,8 @@ public class PutFactory {
         
         private static final String windowName = "put";
         private static final String defaultRequest = "record[]field(value)";
+        private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
+        public static final Convert convert = ConvertFactory.getConvert();
         private Shell shell = null;
         private Button connectButton;
         private Button createRequestButton = null;
@@ -305,7 +312,9 @@ public class PutFactory {
             }
             
             void put() {
-                channelPut.put(false);
+System.out.println("put " + pvStructure);
+System.out.println(bitSet);
+                channelPut.put(pvStructure,bitSet);
             }
              
             PVStructure getPVStructure() {
@@ -378,25 +387,20 @@ public class PutFactory {
                 runCommand = RunCommand.channelrequestDone;
                 shell.getDisplay().asyncExec(this);
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutRequester#channelPutConnect(Status,org.epics.pvaccess.client.ChannelPut, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
-             */
             @Override
-            public void channelPutConnect(Status status,ChannelPut channelPut,PVStructure pvStructure,BitSet bitSet) {
+            public void channelPutConnect(Status status, ChannelPut channelPut, Structure structure)
+            {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
                 this.channelPut = channelPut;
-                this.pvStructure = pvStructure;
-                this.bitSet = bitSet;
+                pvStructure = pvDataCreate.createPVStructure(structure);
+                bitSet = new BitSet(pvStructure.getNumberFields());
                 channelPut.get();
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutRequester#putDone(Status)
-             */
             @Override
-            public void putDone(Status status) {
+            public void putDone(Status status, ChannelPut channelPut) {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
@@ -404,15 +408,14 @@ public class PutFactory {
                 runCommand = RunCommand.putDone;
                 shell.getDisplay().asyncExec(this);
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutRequester#getDone(Status)
-             */
             @Override
-            public void getDone(Status status) {
+            public void getDone(Status status, ChannelPut channelPut,PVStructure pvStructure, BitSet bitSet)
+            {
                 if (!status.isOK()) {
                     message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                     if (!status.isSuccess()) return;
                 }
+                convert.copyStructure(pvStructure, this.pvStructure);
                 runCommand = RunCommand.channelPutConnect;
                 shell.getDisplay().asyncExec(this);
             }

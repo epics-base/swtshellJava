@@ -27,21 +27,23 @@ import org.epics.pvaccess.client.ChannelProvider;
 import org.epics.pvaccess.client.ChannelPutGet;
 import org.epics.pvaccess.client.ChannelPutGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
+import org.epics.pvdata.factory.PVDataFactory;
+import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorNode;
 import org.epics.pvdata.misc.ThreadPriority;
 import org.epics.pvdata.misc.Timer;
 import org.epics.pvdata.misc.TimerFactory;
 import org.epics.pvdata.pv.MessageType;
-import org.epics.pvdata.pv.PVArray;
+import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVString;
 import org.epics.pvdata.pv.PVStringArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
-import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.StringArrayData;
+import org.epics.pvdata.pv.Structure;
 
 
 /**
@@ -54,6 +56,7 @@ public class ChannelListFactory {
         ChannelListImpl channelListImpl = new ChannelListImpl(display);
         channelListImpl.start();
     }
+    private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
     private static final ChannelAccess channelAccess = ChannelAccessFactory.getChannelAccess();
     private static final Executor executor = SwtshellFactory.getExecutor();
     private static final Timer timer = TimerFactory.create("channelListFactory", ThreadPriority.lowest);
@@ -265,12 +268,13 @@ public class ChannelListFactory {
             private String regularExpression;
             private Channel channel = null;
             private ChannelPutGet channelPutGet = null;
+            private PVStructure pvPutStructure = null;
+            private BitSet putBitSet = null;
            
             private PVString pvDatabase = null;
             private PVString pvRegularExpression = null;
             
-            private PVString pvStatus = null;
-            private PVStringArray pvRecordNames = null;
+            
             private String result = null;
             
  
@@ -321,74 +325,83 @@ public class ChannelListFactory {
             }
 
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#channelPutGetConnect(Status,org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.pv.PVStructure)
+             * @see org.epics.pvaccess.client.ChannelPutGetRequester#channelPutGetConnect(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.Structure, org.epics.pvdata.pv.Structure)
              */
             @Override
-            public void channelPutGetConnect(Status status,ChannelPutGet channelPutGet,
-                    PVStructure pvPutStructure, PVStructure pvGetStructure)
+            public void channelPutGetConnect(Status status,
+                    ChannelPutGet channelPutGet, Structure putStructure,
+                    Structure getStructure)
             {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
                 this.channelPutGet = channelPutGet;
-                if(pvPutStructure!=null && pvGetStructure!=null) {
+                
+                pvPutStructure = pvDataCreate.createPVStructure(putStructure);
+                putBitSet = new BitSet(pvPutStructure.getNumberFields());
+                if(pvPutStructure!=null) {
                     pvDatabase = pvPutStructure.getStringField("argument.database");
                     pvRegularExpression = pvPutStructure.getStringField("argument.regularExpression");
-                    pvStatus = pvGetStructure.getStringField("result.status");
-                    PVArray pvArray = pvGetStructure.getScalarArrayField("result.names", ScalarType.pvString);
-                    if(pvArray!=null) pvRecordNames = (PVStringArray)pvArray;
-                    if(pvDatabase!=null && pvRegularExpression!=null && pvStatus!=null && pvArray!=null) {
+                    
+                    if(pvDatabase!=null && pvRegularExpression!=null) {
+                        putBitSet.clear();
                         pvDatabase.put("master");
                         pvRegularExpression.put(regularExpression);
-                        this.channelPutGet.putGet(true);
+                        putBitSet.set(0);
+                        this.channelPutGet.putGet(pvPutStructure,putBitSet);
                         return;
                     }
                 }
                 StringBuilder stringBuilder = new StringBuilder();
                 stringBuilder.append("createPutGet failed");
-                if(pvPutStructure!=null && pvGetStructure!=null) {
-                    if(pvDatabase==null) {
-                        requester.message("field database does not exist", MessageType.error);
-                    }
-                    if(pvRegularExpression==null) {
-                        requester.message("field regularExpression does not exist", MessageType.error);
-                    }
-                    if(pvStatus==null) {
-                        requester.message("field status does not exist", MessageType.error);
-                    }
-                    if(pvRecordNames==null) {
-                        requester.message("field names does not exist", MessageType.error);
-                    }
-                }
                 channel.destroy();
                 requester.message(stringBuilder.toString(), MessageType.error);
             }
 
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getGetDone(Status)
+             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getGetDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
              */
             @Override
-            public void getGetDone(Status success) {}
+            public void getGetDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure getPVStructure, BitSet getBitSet)
+            {}
 
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getPutDone(Status)
+             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getPutDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
              */
             @Override
-            public void getPutDone(Status success) {}
+            public void getPutDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure putPVStructure, BitSet putBitSet)
+            { }
 
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#putGetDone(Status)
+             * @see org.epics.pvaccess.client.ChannelPutGetRequester#putGetDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
              */
             @Override
-            public void putGetDone(Status status) {
+            public void putGetDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure getPVStructure, BitSet getBitSet)
+            {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
+                PVString pvStatus = getPVStructure.getStringField("result.status");
+                if(pvStatus!=null) {
+                    String stat = pvStatus.get();
+                    if(!stat.isEmpty()) {
+                        requester.message(stat,MessageType.warning);
+                    }
+                }
+                PVStringArray pvRecordNames = getPVStructure.getSubField(PVStringArray.class,"result.names");
+                if(pvRecordNames==null) {
+                    requester.message("result does not have field names",MessageType.error);
+                    return;
+                }
+                
                 int length = pvRecordNames.getLength();
                 if(length<1) {
-                    requester.message(pvStatus.get(),MessageType.error);
+                    requester.message("number names <1",MessageType.error);
                     return;
                 }
                 StringBuilder stringBuilder = new StringBuilder();

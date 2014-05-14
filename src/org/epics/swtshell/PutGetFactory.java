@@ -23,12 +23,17 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelPutGet;
 import org.epics.pvaccess.client.ChannelPutGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
+import org.epics.pvdata.factory.ConvertFactory;
+import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.misc.BitSet;
+import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.MessageType;
+import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.Status;
+import org.epics.pvdata.pv.Structure;
 
 /*
  * A shell for channelGet.
@@ -63,6 +68,8 @@ public class PutGetFactory {
 
         private static String windowName = "putGet";
         private static final String defaultRequest = "record[process=true]putField(argument)getField(result)";
+        private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
+        public static final Convert convert = ConvertFactory.getConvert();
         private Shell shell = null;
         private Button connectButton;
         private Button createPutRequestButton = null;
@@ -268,8 +275,6 @@ public class PutGetFactory {
             private ChannelPutGet channelPutGet = null;
             private PVStructure pvPutStructure = null;
             private BitSet putBitSet = null;
-            private PVStructure pvGetStructure = null;
-            private BitSet getBitSet = null;
             private RunCommand runCommand = null;
             private boolean isPutRequest = true;
             private PrintModified printModified = null;
@@ -319,7 +324,7 @@ public class PutGetFactory {
             }
             
             void putGet() {
-                channelPutGet.putGet(false);
+                channelPutGet.putGet(pvPutStructure,putBitSet);
             }
             
             /* (non-Javadoc)
@@ -411,44 +416,40 @@ public class PutGetFactory {
                 runCommand = RunCommand.requestDone;
                 shell.getDisplay().asyncExec(this);
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#channelPutGetConnect(Status,org.epics.pvaccess.client.ChannelPutGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
-             */
             @Override
-            public void channelPutGetConnect(Status status,ChannelPutGet channelPutGet,
-                    PVStructure pvPutStructure, PVStructure pvGetStructure)
+            public void channelPutGetConnect(Status status,
+                    ChannelPutGet channelPutGet, Structure putStructure,
+                    Structure getStructure)
             {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
                 this.channelPutGet = channelPutGet;
-                this.pvPutStructure = pvPutStructure;
-                this.pvGetStructure = pvGetStructure;
+                pvPutStructure = pvDataCreate.createPVStructure(putStructure);
                 putBitSet = new BitSet(pvPutStructure.getNumberFields());
-                getBitSet = new BitSet(pvGetStructure.getNumberFields());
                 channelPutGet.getPut();
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getGetDone(Status)
-             */
             @Override
-            public void getGetDone(Status success) {}
+            public void getGetDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure getPVStructure, BitSet getBitSet)
+            {
+            }
 
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#getPutDone(Status)
-             */
             @Override
-            public void getPutDone(Status success) {
+            public void getPutDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure putPVStructure, BitSet putBitSet)
+            {
+                convert.copyStructure(pvPutStructure,this.pvPutStructure);
                 runCommand = RunCommand.getPutDone;
                 shell.getDisplay().asyncExec(this);
             }
 
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelPutGetRequester#putGetDone(Status)
-             */
             @Override
-            public void putGetDone(Status success) {
+            public void putGetDone(Status status, ChannelPutGet channelPutGet,
+                    PVStructure getPVStructure, BitSet getBitSet)
+            {
+                printModified.setArgs(getPVStructure, getBitSet, null);
                 runCommand = RunCommand.putGetDone;
                 shell.getDisplay().asyncExec(this);
             }
@@ -472,13 +473,11 @@ public class PutGetFactory {
                     return;
                 case getPutDone:
                     printModified = PrintModifiedFactory.create(
-                            channel.getChannelName(),pvGetStructure,getBitSet, null, consoleText);
+                            channel.getChannelName(), consoleText);
                     stateMachine.setState(State.ready);
                     return;
                 case putGetDone:
                     stateMachine.setState(State.ready);
-                    getBitSet.clear();
-                    getBitSet.set(0);
                     printModified.print();
                     return;
                 }

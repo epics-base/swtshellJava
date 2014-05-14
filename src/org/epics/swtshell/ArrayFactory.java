@@ -23,16 +23,21 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelArray;
 import org.epics.pvaccess.client.ChannelArrayRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
 import org.epics.pvdata.factory.ConvertFactory;
+import org.epics.pvdata.factory.PVDataFactory;
+import org.epics.pvdata.pv.Array;
 import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVArray;
+import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVScalarArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
+import org.epics.pvdata.pv.ScalarArray;
 import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.Type;
+import org.epics.pvdata.copy.CreateRequest;
+
 
 /**
  * Shell for processing a channel.
@@ -51,6 +56,7 @@ public class ArrayFactory {
     }
 
     private static final Convert convert = ConvertFactory.getConvert();
+    private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
     
     private static class ArrayImpl implements DisposeListener,SelectionListener
     {
@@ -73,12 +79,15 @@ public class ArrayFactory {
         
         private Button getButton = null;
         private Text getOffsetText = null;
+        private Text getStrideText = null;
         private Text countText = null;
         
         private Button putButton = null;
         private Text putOffsetText = null;
+        private Text putStrideText = null;
         private Text valueText = null;
         
+        private Button getLengthButton = null;
         private Button setLengthButton = null;
         private Text lengthText = null;
         private Text capacityText = null;
@@ -118,7 +127,7 @@ public class ArrayFactory {
             
             Composite getComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
-            gridLayout.numColumns = 3;
+            gridLayout.numColumns = 4;
             getComposite.setLayout(gridLayout);
             getButton = new Button(getComposite,SWT.PUSH);
             getButton.setText("get");
@@ -133,6 +142,16 @@ public class ArrayFactory {
             gridData.widthHint = 100;
             getOffsetText.setLayoutData(gridData);
             getOffsetText.setText("0");
+            Composite strideComposite = new Composite(getComposite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 2;
+            strideComposite.setLayout(gridLayout);
+            new Label(strideComposite,SWT.NONE).setText("stride");
+            getStrideText = new Text(strideComposite,SWT.BORDER);
+            gridData = new GridData(); 
+            gridData.widthHint = 100;
+            getStrideText.setLayoutData(gridData);
+            getStrideText.setText("1");
             Composite countComposite = new Composite(getComposite,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 3;
@@ -142,11 +161,11 @@ public class ArrayFactory {
             gridData = new GridData(); 
             gridData.widthHint = 100;
             countText.setLayoutData(gridData);
-            countText.setText("-1");
+            countText.setText("0");
             
             Composite putComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
-            gridLayout.numColumns = 3;
+            gridLayout.numColumns = 4;
             putComposite.setLayout(gridLayout);
             gridData = new GridData(GridData.FILL_HORIZONTAL);
             putComposite.setLayoutData(gridData);
@@ -163,9 +182,19 @@ public class ArrayFactory {
             gridData.widthHint = 100;
             putOffsetText.setLayoutData(gridData);
             putOffsetText.setText("0");
+            strideComposite = new Composite(putComposite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 2;
+            strideComposite.setLayout(gridLayout);
+            new Label(strideComposite,SWT.NONE).setText("stride");
+            putStrideText = new Text(strideComposite,SWT.BORDER);
+            gridData = new GridData(); 
+            gridData.widthHint = 100;
+            putStrideText.setLayoutData(gridData);
+            putStrideText.setText("1");
             Composite valueComposite = new Composite(putComposite,SWT.BORDER);
             gridLayout = new GridLayout();
-            gridLayout.numColumns = 3;
+            gridLayout.numColumns = 2;
             valueComposite.setLayout(gridLayout);
             gridData = new GridData(GridData.FILL_HORIZONTAL);
             valueComposite.setLayoutData(gridData);
@@ -177,8 +206,11 @@ public class ArrayFactory {
             
             Composite setLengthComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
-            gridLayout.numColumns = 3;
+            gridLayout.numColumns = 4;
             setLengthComposite.setLayout(gridLayout);
+            getLengthButton = new Button(setLengthComposite,SWT.PUSH);
+            getLengthButton.setText("getLength");
+            getLengthButton.addSelectionListener(this);
             setLengthButton = new Button(setLengthComposite,SWT.PUSH);
             setLengthButton.setText("setLength");
             setLengthButton.addSelectionListener(this);
@@ -201,7 +233,7 @@ public class ArrayFactory {
             gridData = new GridData(); 
             gridData.widthHint = 100;
             capacityText.setLayoutData(gridData);
-            capacityText.setText("-1");
+            capacityText.setText("0");
             
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -279,12 +311,16 @@ public class ArrayFactory {
                 stateMachine.setState(State.active);
                 int offset = Integer.parseInt(getOffsetText.getText());
                 int count = Integer.parseInt(countText.getText());
-                channelClient.get(offset, count);
+                int stride = Integer.parseInt(getStrideText.getText());
+                channelClient.get(offset, count,stride);
             } else if(object==putButton) {
                 stateMachine.setState(State.active);
                 int offset = Integer.parseInt(putOffsetText.getText());
                 String value = valueText.getText();
-                channelClient.put(offset, value);
+                int stride = Integer.parseInt(putStrideText.getText());
+                channelClient.put(offset, value,stride);
+            } else if(object==getLengthButton) {
+                channelClient.getLength();
             } else if(object==setLengthButton) {
             	stateMachine.setState(State.active);
                 int length = Integer.parseInt(lengthText.getText());
@@ -306,6 +342,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(true);
                     getButton.setEnabled(false);
                     putButton.setEnabled(false);
+                    getLengthButton.setEnabled(false);
                     setLengthButton.setEnabled(false);
                     return;
                 case connecting:
@@ -314,6 +351,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(true);
                     getButton.setEnabled(false);
                     putButton.setEnabled(false);
+                    getLengthButton.setEnabled(false);
                     setLengthButton.setEnabled(false);
                     return;
                 case readyForCreateArray:
@@ -322,6 +360,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(true);
                     getButton.setEnabled(false);
                     putButton.setEnabled(false);
+                    getLengthButton.setEnabled(false);
                     setLengthButton.setEnabled(false);
                     return;
                 case creatingArray:
@@ -330,6 +369,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(false);
                     getButton.setEnabled(false);
                     putButton.setEnabled(false);
+                    getLengthButton.setEnabled(false);
                     setLengthButton.setEnabled(false);
                     return;
                 case ready:
@@ -338,6 +378,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(false);
                     getButton.setEnabled(true);
                     putButton.setEnabled(true);
+                    getLengthButton.setEnabled(true);
                     setLengthButton.setEnabled(true);
                     return;
                 case active:
@@ -346,6 +387,7 @@ public class ArrayFactory {
                     subFieldText.setEnabled(false);
                     getButton.setEnabled(false);
                     putButton.setEnabled(false);
+                    getLengthButton.setEnabled(false);
                     setLengthButton.setEnabled(false);
                     return;
                 }
@@ -355,7 +397,7 @@ public class ArrayFactory {
         }
         
         private enum RunCommand {
-            channelConnected,timeout,destroy,channelArrayConnect,getDone,putDone,setLengthDone
+            channelConnected,timeout,destroy,channelArrayConnect,getDone,putDone,setLengthDone,getLengthDone
         }
         
         
@@ -367,6 +409,7 @@ public class ArrayFactory {
             private PVArray pvArray = null;
             private RunCommand runCommand;
             
+           
             void connect(Shell shell) {
                 if(connectChannel!=null) {
                     message("connect in propress",MessageType.error);
@@ -401,11 +444,12 @@ public class ArrayFactory {
                 }
             }
   
-            void get(int offset,int count) {
-                channelArray.getArray(false, offset, count);
+            void get(int offset,int count,int stride) {
+                channelArray.getArray( offset, count,stride);
             }
             
-            void put(int offset,String value) {
+            void  put(int offset,String value,int stride)
+            {
                 try {
                     int len = convert.fromString((PVScalarArray)pvArray,value);
                     pvArray.setLength(len);
@@ -414,14 +458,19 @@ public class ArrayFactory {
                     return;
                 }
                 try {
-                    channelArray.putArray(false, offset, pvArray.getLength());
+                    channelArray.putArray(pvArray, offset, pvArray.getLength(),stride);
                 } catch (IllegalArgumentException e) {
                     message("IllegalArgumentException " + e.getMessage(),MessageType.error);
                 }
             }
             
+            void getLength()
+            {
+                channelArray.getLength();    
+            }
+            
             void setLength(int length,int capacity) {
-            	channelArray.setLength(false, length, capacity);
+            	channelArray.setLength(length, capacity);
             }
             /* (non-Javadoc)
              * @see org.epics.pvaccess.client.ChannelRequester#channelStateChange(org.epics.pvaccess.client.Channel, org.epics.pvaccess.client.Channel.ConnectionState)
@@ -475,40 +524,43 @@ public class ArrayFactory {
                 shell.getDisplay().asyncExec(this);
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelArrayRequester#channelArrayConnect(Status,org.epics.pvaccess.client.ChannelArray, org.epics.pvdata.pv.PVArray)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#channelArrayConnect(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray, org.epics.pvdata.pv.Array)
              */
             @Override
-            public void channelArrayConnect(Status status,ChannelArray channelArray,PVArray pvArray) {
+            public void channelArrayConnect(Status status,ChannelArray channelArray, Array array)
+            {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
-                if(pvArray.getField().getType()==Type.structureArray) {
-                	message("The elementType is structure. Use structureArray to access.",MessageType.error);
+                if(array.getType()!=Type.scalarArray) {
+                	message("The elementType is not scalarArray. Use structureArray or UnionArray to access.",MessageType.error);
                 	return;
                 }
-                this.pvArray = pvArray;
+                pvArray = pvDataCreate.createPVScalarArray((ScalarArray)array);
                 runCommand = RunCommand.channelArrayConnect;
                 shell.getDisplay().asyncExec(this);
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelArrayRequester#getArrayDone(Status)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#getArrayDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray, org.epics.pvdata.pv.PVArray)
              */
             @Override
-            public void getArrayDone(Status status) {
+            public void getArrayDone(Status status, ChannelArray channelArray, PVArray pvArray)
+            {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
+                convert.copy(pvArray,this.pvArray);
                 runCommand = RunCommand.getDone;
                 shell.getDisplay().asyncExec(this);
                 
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelArrayRequester#putArrayDone(Status)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#putArrayDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray)
              */
             @Override
-            public void putArrayDone(Status status) {
+            public void putArrayDone(Status status, ChannelArray channelArray) {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
@@ -517,10 +569,22 @@ public class ArrayFactory {
                 shell.getDisplay().asyncExec(this);
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelArrayRequester#setLengthDone(org.epics.pvdata.pv.Status)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#getLengthDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray, int, int)
              */
             @Override
-			public void setLengthDone(Status status) {
+            public void getLengthDone(Status status, ChannelArray channelArray,int length, int capacity) {
+                pvArray.setCapacity(capacity);
+                pvArray.setLength(length);
+                runCommand = RunCommand.getLengthDone;
+                shell.getDisplay().asyncExec(this);
+            }
+
+
+            /* (non-Javadoc)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#setLengthDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray)
+             */
+            @Override
+            public void setLengthDone(Status status, ChannelArray channelArray) {
             	if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
@@ -554,10 +618,17 @@ public class ArrayFactory {
                     int indEnd = value.lastIndexOf(']');
                     if(indEnd>indStart) value = value.substring(indStart+1,indEnd);
                     valueText.setText(value);
+                    message("getDone",MessageType.info);
                     stateMachine.setState(State.ready);
                     return;
                 case putDone:
                     message("putDone",MessageType.info);
+                    stateMachine.setState(State.ready);
+                    return;
+                case getLengthDone:
+                    lengthText.setText(Integer.toString(pvArray.getLength()));
+                    capacityText.setText(Integer.toString(pvArray.getCapacity()));
+                    message("getLengthDone",MessageType.info);
                     stateMachine.setState(State.ready);
                     return;
                 case setLengthDone:

@@ -23,7 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelRPC;
 import org.epics.pvaccess.client.ChannelRPCRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.MessageType;
@@ -296,7 +296,7 @@ public class ChannelRPCFactory {
             
             void get() {
                 runCommand = RunCommand.channelRPCConnect;
-                channelRPC.request(pvArgument,false);
+                channelRPC.request(pvArgument);
             }
             
             /* (non-Javadoc)
@@ -361,16 +361,15 @@ public class ChannelRPCFactory {
                 shell.getDisplay().asyncExec(this);
             }
 
-			/* (non-Javadoc)
-			 * @see org.epics.pvaccess.client.ChannelRPCRequester#requestDone(org.epics.pvdata.pv.Status, org.epics.pvdata.pv.PVStructure)
-			 */
 			@Override
-			public void requestDone(Status status, PVStructure pvResponse) {
+            public void requestDone(Status status, ChannelRPC channelRPC,PVStructure pvResponse)
+			{
 			    if(pvResponse!=null && pvResponse.getNumberFields()>0) {
 			        bitSet = new BitSet(pvResponse.getNumberFields());
 			        bitSet.set(0);
 			        BitSet overrunBitSet = new BitSet(pvResponse.getNumberFields());
-			        printModified = PrintModifiedFactory.create("rpcResult", pvResponse, bitSet, overrunBitSet, consoleText);
+			        printModified = PrintModifiedFactory.create("rpcResult",consoleText);
+			        printModified.setArgs(pvResponse,bitSet, overrunBitSet);
 			    } else {
 			        printModified = null;
 			    }

@@ -24,8 +24,7 @@ import org.eclipse.swt.widgets.Text;
 import org.epics.pvaccess.client.Channel;
 import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
-import org.epics.pvdata.misc.BitSet;
+import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorFactory;
 import org.epics.pvdata.misc.ExecutorNode;
@@ -526,10 +525,11 @@ public class MonitorFactory {
                                     consoleText.append("monitor occured");
                                     consoleText.append(String.format("%n"));
                                 } else {
-                                    BitSet changeBitSet = monitorElement.getChangedBitSet();
-                                    BitSet overrunBitSet = monitorElement.getOverrunBitSet();
-                                    printModified = PrintModifiedFactory.create(channel.getChannelName(),pvStructure, changeBitSet, overrunBitSet, consoleText);
-                                    printModified.print();
+                                    printModified = PrintModifiedFactory.create(channel.getChannelName(), consoleText);
+                                    printModified.print(
+                                            monitorElement.getPVStructure(),
+                                            monitorElement.getChangedBitSet(),
+                                            monitorElement.getOverrunBitSet());
                                 }
                                 monitor.release(monitorElement);
                             }

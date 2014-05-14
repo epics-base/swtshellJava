@@ -23,12 +23,13 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelGet;
 import org.epics.pvaccess.client.ChannelGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
-import org.epics.pvaccess.client.CreateRequest;
+import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.Status;
+import org.epics.pvdata.pv.Structure;
 
 
 /**
@@ -69,7 +70,6 @@ public class GetFactory {
         private Text requestText = null;
         private Button createGetButton;
         private Button getButton;
-        private Button dumpButton;
         private Text consoleText = null; 
         
         private void start(Display display) {
@@ -106,10 +106,6 @@ public class GetFactory {
             getButton = new Button(composite,SWT.NONE);
             getButton.setText("get");
             getButton.addSelectionListener(this);
-            
-            dumpButton = new Button(composite,SWT.NONE);
-            dumpButton.setText("dump");
-            dumpButton.addSelectionListener(this);
             
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -192,8 +188,6 @@ public class GetFactory {
             } else if(object==getButton) {
                stateMachine.setState(State.getActive);
                channelClient.get();
-            } else if(object==dumpButton) {
-                channelClient.dump();
             }
         }
         
@@ -210,7 +204,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(false);
                     createGetButton.setEnabled(false);
                     getButton.setEnabled(false);
-                    dumpButton.setEnabled(false);
                     return;
                 case connecting:
                     connectButton.setText("disconnect");
@@ -218,7 +211,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(false);
                     createGetButton.setEnabled(false);
                     getButton.setEnabled(false);
-                    dumpButton.setEnabled(false);
                     return;
                 case readyForCreateGet:
                     connectButton.setText("disconnect");
@@ -226,7 +218,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(true);
                     createGetButton.setEnabled(true);
                     getButton.setEnabled(false);
-                    dumpButton.setEnabled(false);
                     return;
                 case creatingGet:
                     connectButton.setText("disconnect");
@@ -234,7 +225,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(false);
                     createGetButton.setEnabled(true);
                     getButton.setEnabled(false);
-                    dumpButton.setEnabled(false);
                     return;
                 case ready:
                     connectButton.setText("disconnect");
@@ -242,7 +232,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(false);
                     createGetButton.setEnabled(true);
                     getButton.setEnabled(true);
-                    dumpButton.setEnabled(true);
                     return;
                 case getActive:
                     connectButton.setText("disconnect");
@@ -250,7 +239,6 @@ public class GetFactory {
                     createRequestButton.setEnabled(false);
                     createGetButton.setEnabled(true);
                     getButton.setEnabled(false);
-                    dumpButton.setEnabled(false);
                     return;
                 }
                 
@@ -268,10 +256,10 @@ public class GetFactory {
             private Channel channel = null;
             private ConnectChannel connectChannel = null;
             private ChannelGet channelGet = null;
-            private BitSet changeBitSet = null;
             private RunCommand runCommand;
             private PrintModified printModified = null;
 
+           
             void connect(Shell shell) {
                 if(connectChannel!=null) {
                     message("connect in propress",MessageType.error);
@@ -279,6 +267,7 @@ public class GetFactory {
                 connectChannel = ConnectChannelFactory.create(shell, this,this);
                 connectChannel.connect();
             }
+            
             void createRequest(Shell shell) {
                 CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
                 createRequest.create();
@@ -303,14 +292,9 @@ public class GetFactory {
             }
             
             void get() {
-                channelGet.get(false);
+                channelGet.get();
             }
             
-            void dump() {
-            	changeBitSet.clear();
-            	changeBitSet.set(0);
-            	printModified.print();
-            }
             /* (non-Javadoc)
              * @see org.epics.pvaccess.client.ChannelRequester#channelStateChange(org.epics.pvaccess.client.Channel, org.epics.pvaccess.client.Channel.ConnectionState)
              */
@@ -377,31 +361,28 @@ public class GetFactory {
                 runCommand = RunCommand.channelrequestDone;
                 shell.getDisplay().asyncExec(this);
             }
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelGetRequester#channelGetConnect(Status,org.epics.pvaccess.client.ChannelGet, org.epics.pvdata.pv.PVStructure, org.epics.pvdata.misc.BitSet)
-             */
             @Override
-            public void channelGetConnect(Status status,ChannelGet channelGet,PVStructure pvStructure,BitSet bitSet) {
+            public void channelGetConnect(Status status, ChannelGet channelGet, Structure structure)
+            {
+               
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
                 this.channelGet = channelGet;
-                changeBitSet = bitSet;
-                printModified = PrintModifiedFactory.create(channel.getChannelName(),pvStructure, changeBitSet, null, consoleText);
+                printModified = PrintModifiedFactory.create(channel.getChannelName(), consoleText);
                 runCommand = RunCommand.channelGetConnect;
                 shell.getDisplay().asyncExec(this);
             }
 
-            /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelGetRequester#getDone(Status)
-             */
             @Override
-            public void getDone(Status status) {
+            public void getDone(Status status, ChannelGet channelGet,PVStructure pvStructure, BitSet bitSet)
+            {
                 if (!status.isOK()) {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
+                printModified.setArgs(pvStructure,bitSet, null);
                 shell.getDisplay().asyncExec( new Runnable() {
                     public void run() {
                         printModified.print();
