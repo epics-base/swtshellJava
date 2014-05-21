@@ -191,8 +191,8 @@ public class PutFactory {
                     stateMachine.setState(State.readyForCreatePut);
                 }
             } else if(object==putButton) {
-               GUIData guiData = GUIDataFactory.create(shell);
-               guiData.get(channelClient.getPVStructure(), channelClient.getBitSet());
+               GUIData guiData = GUIDataFactory.create();
+               guiData.getStructure(shell,channelClient.getPVStructure(), channelClient.getBitSet());
                stateMachine.setState(State.putActive);
                channelClient.put();
             } else if(object==dumpButton) {
@@ -312,8 +312,6 @@ public class PutFactory {
             }
             
             void put() {
-System.out.println("put " + pvStructure);
-System.out.println(bitSet);
                 channelPut.put(pvStructure,bitSet);
             }
              

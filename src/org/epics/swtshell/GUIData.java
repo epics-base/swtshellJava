@@ -5,8 +5,14 @@
  */
 package org.epics.swtshell;
 
+import org.eclipse.swt.widgets.Shell;
 import org.epics.pvdata.misc.BitSet;
+import org.epics.pvdata.pv.PVScalar;
+import org.epics.pvdata.pv.PVScalarArray;
 import org.epics.pvdata.pv.PVStructure;
+import org.epics.pvdata.pv.PVStructureArray;
+import org.epics.pvdata.pv.PVUnion;
+import org.epics.pvdata.pv.PVUnionArray;
 
 
 /**
@@ -14,5 +20,10 @@ import org.epics.pvdata.pv.PVStructure;
  *
  */
 public interface GUIData {
-    void get(PVStructure pvStructure,BitSet bitSet);
+    void getStructure(Shell parent,PVStructure pvStructure,BitSet bitSet);
+    boolean getScalarValue(Shell parent,PVScalar pvScalar);
+    boolean getUnionValue(Shell parent,PVUnion pvUnion);
+    boolean getScalarArray(Shell parent,PVScalarArray pvScalarArray);
+    boolean getStructureArray(Shell parent,PVStructureArray pvStructureArray);
+    boolean getUnionArray(Shell parent,PVUnionArray pvUnionArray);
 }

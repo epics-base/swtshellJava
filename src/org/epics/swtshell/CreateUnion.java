@@ -4,16 +4,17 @@
  * in file LICENSE that is included with this distribution.
  */
 package org.epics.swtshell;
-import org.epics.pvdata.pv.Structure;
+import org.epics.pvdata.pv.Union;
 
 /**
  * Create a PVStructure
  * @author mrk
  *
  */
-public interface CreateStructure {
+public interface CreateUnion {
     /**
      * Create the request
      */
-    Structure create();
+    Union create(String prompt);
+    Union createVariant();
 }

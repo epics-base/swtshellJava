@@ -192,11 +192,11 @@ public class PutGetFactory {
         			channelClient.createPutGet(pvStructure);
         		} else {
         			channelClient.destroyPutGet();
-        			stateMachine.setState(State.readyForCreatePutGet);
         		}
         	} else if(object==putGetButton) {
-        		GUIData guiData = GUIDataFactory.create(shell);
-        		guiData.get(channelClient.getPutPVStructure(),channelClient.getPutBitSet());
+        		GUIData guiData = GUIDataFactory.create();
+        		guiData.getStructure(shell,channelClient.getPutPVStructure(),channelClient.getPutBitSet());
+        		stateMachine.setState(State.putGetActive);
         		channelClient.putGet();
         	}
         }
@@ -297,6 +297,7 @@ public class PutGetFactory {
                 createRequest.create();
             }
             void createPutGet(PVStructure pvRequest) {
+System.out.println("calling createChannelPutGet");
                 channelPutGet = channel.createChannelPutGet(this,pvRequest);
                 return;
             }
@@ -428,6 +429,7 @@ public class PutGetFactory {
                 this.channelPutGet = channelPutGet;
                 pvPutStructure = pvDataCreate.createPVStructure(putStructure);
                 putBitSet = new BitSet(pvPutStructure.getNumberFields());
+System.out.println("calling channelPutGet.getPut(");
                 channelPutGet.getPut();
             }
             @Override
@@ -440,6 +442,7 @@ public class PutGetFactory {
             public void getPutDone(Status status, ChannelPutGet channelPutGet,
                     PVStructure putPVStructure, BitSet putBitSet)
             {
+System.out.println("getPutDone");
                 convert.copyStructure(pvPutStructure,this.pvPutStructure);
                 runCommand = RunCommand.getPutDone;
                 shell.getDisplay().asyncExec(this);

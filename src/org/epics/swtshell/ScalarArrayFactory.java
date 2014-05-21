@@ -23,6 +23,7 @@ import org.epics.pvaccess.client.Channel.ConnectionState;
 import org.epics.pvaccess.client.ChannelArray;
 import org.epics.pvaccess.client.ChannelArrayRequester;
 import org.epics.pvaccess.client.ChannelRequester;
+import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.factory.ConvertFactory;
 import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.pv.Array;
@@ -36,7 +37,6 @@ import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.ScalarArray;
 import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.Type;
-import org.epics.pvdata.copy.CreateRequest;
 
 
 /**
@@ -44,7 +44,7 @@ import org.epics.pvdata.copy.CreateRequest;
  * @author mrk
  *
  */
-public class ArrayFactory {
+public class ScalarArrayFactory {
 
     /**
      * Create the process shell.
@@ -71,7 +71,7 @@ public class ArrayFactory {
         private Requester requester = null;
         private boolean isDisposed = false;
 
-        private static String windowName = "array";
+        private static String windowName = "scalarArray";
         private Shell shell = null;
         private Button connectButton = null;
         private Button createArrayButton = null;

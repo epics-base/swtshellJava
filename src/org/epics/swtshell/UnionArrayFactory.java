@@ -26,40 +26,40 @@ import org.epics.pvaccess.client.ChannelRequester;
 import org.epics.pvdata.copy.CreateRequest;
 import org.epics.pvdata.factory.ConvertFactory;
 import org.epics.pvdata.factory.PVDataFactory;
-import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.pv.Array;
 import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVArray;
 import org.epics.pvdata.pv.PVDataCreate;
 import org.epics.pvdata.pv.PVStructure;
-import org.epics.pvdata.pv.PVStructureArray;
+import org.epics.pvdata.pv.PVUnion;
+import org.epics.pvdata.pv.PVUnionArray;
 import org.epics.pvdata.pv.Requester;
 import org.epics.pvdata.pv.Status;
-import org.epics.pvdata.pv.StructureArray;
-import org.epics.pvdata.pv.StructureArrayData;
 import org.epics.pvdata.pv.Type;
+import org.epics.pvdata.pv.UnionArray;
+import org.epics.pvdata.pv.UnionArrayData;
 
 /**
  * Shell for processing a channel.
  * @author mrk
  *
  */
-public class StructureArrayFactory {
+public class UnionArrayFactory {
 
     /**
      * Create the process shell.
      * @param display The display.
      */
     public static void init(Display display) {
-        StructureArrayImpl processImpl = new StructureArrayImpl();
+        UnionArrayImpl processImpl = new UnionArrayImpl();
         processImpl.start(display);
     }
 
     private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
     private static final Convert convert = ConvertFactory.getConvert();
     
-    private static class StructureArrayImpl implements DisposeListener,SelectionListener
+    private static class UnionArrayImpl implements DisposeListener,SelectionListener
     {
         // following are global to embedded classes
         private enum State{
@@ -72,7 +72,7 @@ public class StructureArrayFactory {
         private Requester requester = null;
         private boolean isDisposed = false;
 
-        private static String windowName = "structureArray";
+        private static String windowName = "unionArray";
         private Shell shell = null;
         private Button connectButton = null;
         private Button createArrayButton = null;
@@ -300,11 +300,9 @@ public class StructureArrayFactory {
                 channelClient.get(offset, count,stride);
             } else if(object==putElementButton) {
             	int offset = Integer.parseInt(putOffsetText.getText());
-            	PVStructure pvStructure = channelClient.getPVStructure(offset);
+            	PVUnion pvUnion = channelClient.getPVUnion(offset);
             	GUIData guiData = GUIDataFactory.create();
-            	BitSet newBitSet = new BitSet(pvStructure.getNumberFields());
-            	newBitSet.clear();
-            	guiData.getStructure(shell,pvStructure,newBitSet);
+            	guiData.getUnionValue(shell,pvUnion);
             } else if(object==putButton) {
                 stateMachine.setState(State.active);
                 int offset = Integer.parseInt(getOffsetText.getText());
@@ -393,11 +391,11 @@ public class StructureArrayFactory {
         
         private class ChannelClient implements ChannelRequester,ConnectChannelRequester,Runnable,ChannelArrayRequester
         {
-        	private StructureArrayData structureArrayData = new StructureArrayData();
+        	private UnionArrayData unionArrayData = new UnionArrayData();
             private Channel channel = null;
             private ConnectChannel connectChannel = null;
             private ChannelArray channelArray = null;
-            private PVStructureArray pvArray = null;
+            private PVUnionArray pvArray = null;
             private RunCommand runCommand;
             
             void connect(Shell shell) {
@@ -434,18 +432,18 @@ public class StructureArrayFactory {
                 }
             }
             
-            PVStructure getPVStructure(int offset) {
+            PVUnion getPVUnion(int offset) {
             	int length = offset+1;
             	if(pvArray.getLength()<length) {
             		pvArray.setLength(length);
             	}
-            	pvArray.get(0, offset+1, structureArrayData);
-            	PVStructure[] pvStructures = structureArrayData.data;
+            	pvArray.get(0, offset+1, unionArrayData);
+            	PVUnion[] pvUnions = unionArrayData.data;
             	
-            	if(pvStructures[offset]==null) {
-            		pvStructures[offset] = pvDataCreate.createPVStructure(pvArray.getStructureArray().getStructure());
+            	if(pvUnions[offset]==null) {
+            		pvUnions[offset] = pvDataCreate.createPVUnion(pvArray.getUnionArray().getUnion());
             	}
-            	return pvStructures[offset];
+            	return pvUnions[offset];
             }
   
             void get(int offset,int count,int stride) {
@@ -525,11 +523,11 @@ public class StructureArrayFactory {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
-                if(pvArray.getField().getType()!=Type.structureArray) {
+                if(pvArray.getField().getType()!=Type.unionArray) {
                 	message("The elementType is not structure",MessageType.error);
                 	return;
                 }
-                pvArray = pvDataCreate.createPVStructureArray((StructureArray)array);
+                pvArray = pvDataCreate.createPVUnionArray((UnionArray)array);
                 runCommand = RunCommand.channelArrayConnect;
                 shell.getDisplay().asyncExec(this);
             }

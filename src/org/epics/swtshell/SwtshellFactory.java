@@ -132,10 +132,10 @@ public class SwtshellFactory {
                 }
             });
             Button arrayDB = new Button(shell,SWT.PUSH);
-            arrayDB.setText("array");
+            arrayDB.setText("scalarArray");
             arrayDB.addSelectionListener( new SelectionAdapter() {
                 public void widgetSelected(SelectionEvent e) {
-                    ArrayFactory.init(display);
+                    ScalarArrayFactory.init(display);
                 }
             });
             Button structureArrayDB = new Button(shell,SWT.PUSH);
@@ -143,6 +143,13 @@ public class SwtshellFactory {
             structureArrayDB.addSelectionListener( new SelectionAdapter() {
                 public void widgetSelected(SelectionEvent e) {
                     StructureArrayFactory.init(display);
+                }
+            });
+            Button unionArrayDB = new Button(shell,SWT.PUSH);
+            unionArrayDB.setText("unionArray");
+            unionArrayDB.addSelectionListener( new SelectionAdapter() {
+                public void widgetSelected(SelectionEvent e) {
+                    UnionArrayFactory.init(display);
                 }
             });
             shell.pack();

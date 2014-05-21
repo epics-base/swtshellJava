@@ -21,9 +21,9 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.epics.pvaccess.client.Channel;
 import org.epics.pvaccess.client.Channel.ConnectionState;
-import org.epics.pvaccess.client.ChannelAccess;
-import org.epics.pvaccess.client.ChannelAccessFactory;
 import org.epics.pvaccess.client.ChannelProvider;
+import org.epics.pvaccess.client.ChannelProviderRegistry;
+import org.epics.pvaccess.client.ChannelProviderRegistryFactory;
 import org.epics.pvaccess.client.ChannelPutGet;
 import org.epics.pvaccess.client.ChannelPutGetRequester;
 import org.epics.pvaccess.client.ChannelRequester;
@@ -57,7 +57,7 @@ public class ChannelListFactory {
         channelListImpl.start();
     }
     private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
-    private static final ChannelAccess channelAccess = ChannelAccessFactory.getChannelAccess();
+    private static final ChannelProviderRegistry channelProviderRegistry = ChannelProviderRegistryFactory.getChannelProviderRegistry();
     private static final Executor executor = SwtshellFactory.getExecutor();
     private static final Timer timer = TimerFactory.create("channelListFactory", ThreadPriority.lowest);
     
@@ -92,7 +92,7 @@ public class ChannelListFactory {
             provider.setLayout(gridLayout);
             new Label(provider,SWT.RIGHT).setText("provider");
             providerCombo = new Combo(provider,SWT.SINGLE|SWT.BORDER);
-            String[] names = channelAccess.getProviderNames();
+            String[] names = channelProviderRegistry.getProviderNames();
             int pvAcccesInd = 0;
             for(int i=0; i<names.length; i++) {
                 if(names[i].equals("pvAccess")) {
@@ -280,7 +280,7 @@ public class ChannelListFactory {
  
             void connect() {
                 String channelName = iocname + "recordListPGRPC";
-                ChannelProvider channelProvider = channelAccess.getProvider(providerName);
+                ChannelProvider channelProvider = channelProviderRegistry.getProvider(providerName);
                 channel = channelProvider.createChannel(channelName, this, ChannelProvider.PRIORITY_DEFAULT);
             }
             

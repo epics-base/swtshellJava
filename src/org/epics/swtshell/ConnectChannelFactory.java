@@ -17,9 +17,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.epics.pvaccess.client.ChannelAccess;
-import org.epics.pvaccess.client.ChannelAccessFactory;
 import org.epics.pvaccess.client.ChannelProvider;
+import org.epics.pvaccess.client.ChannelProviderRegistry;
+import org.epics.pvaccess.client.ChannelProviderRegistryFactory;
 import org.epics.pvaccess.client.ChannelRequester;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorNode;
@@ -48,7 +48,7 @@ public class ConnectChannelFactory {
         return new ConnectChannelImpl(parent,connectChannelRequester,channelRequester);
     }
     
-    private static final ChannelAccess channelAccess = ChannelAccessFactory.getChannelAccess();
+    private static final ChannelProviderRegistry channelProviderRegistry = ChannelProviderRegistryFactory.getChannelProviderRegistry();
     private static Executor executor = SwtshellFactory.getExecutor();
     private static Timer timer = TimerFactory.create("connectChannel", ThreadPriority.lower);
     
@@ -91,7 +91,7 @@ public class ConnectChannelFactory {
             provider.setLayout(gridLayout);
             new Label(provider,SWT.RIGHT).setText("provider");
             providerCombo = new Combo(provider,SWT.SINGLE|SWT.BORDER);
-            String[] names = channelAccess.getProviderNames();
+            String[] names = channelProviderRegistry.getProviderNames();
             int pvAcccesInd = 0;
             for(int i=0; i<names.length; i++) {
                 if(names[i].equals("pvAccess")) {
@@ -172,7 +172,7 @@ public class ConnectChannelFactory {
          */
         @Override
         public void run() {
-            ChannelProvider channelProvider = channelAccess.getProvider(providerName);
+            ChannelProvider channelProvider = channelProviderRegistry.getProvider(providerName);
             timer.scheduleAfterDelay(timerNode, delay);
             channelProvider.createChannel(channelName, channelRequester,ChannelProvider.PRIORITY_DEFAULT);
         }

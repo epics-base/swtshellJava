@@ -64,7 +64,6 @@ public class ChannelRPCFactory {
         private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
         private StateMachine stateMachine = new StateMachine();
         private ChannelClient channelClient = new ChannelClient();
-        private CreateStructure createStructure = null;
         private PVStructure pvRequest = null;
         private PVStructure pvArgument = null;
         private Requester requester = null;
@@ -73,8 +72,9 @@ public class ChannelRPCFactory {
         private static final String windowName = "channelRPC";
         private Shell shell;
         private Button connectButton;
-        private Text argumentNameText = null;
         private Button createArgumentButton;
+        private Button showArgumentButton;
+        private Button setArgumentButton;
         private Button createChannelRPCButton;
         private Button channelRPCButton;
         private Text consoleText = null; 
@@ -104,9 +104,14 @@ public class ChannelRPCFactory {
             createArgumentButton.setText("createArgument");
             createArgumentButton.addSelectionListener(this);
 
-            argumentNameText = new Text(composite,SWT.BORDER);
-            argumentNameText.setText("argument");
-            
+            showArgumentButton = new Button(composite,SWT.PUSH);
+            showArgumentButton.setText("showArgument");
+            showArgumentButton.addSelectionListener(this);
+
+            setArgumentButton = new Button(composite,SWT.PUSH);
+            setArgumentButton.setText("setArgument");
+            setArgumentButton.addSelectionListener(this);
+
             createChannelRPCButton = new Button(composite,SWT.PUSH);
             createChannelRPCButton.setText("destroyChannelRPC");
             createChannelRPCButton.addSelectionListener(this);
@@ -146,7 +151,6 @@ public class ChannelRPCFactory {
             	return;
             }
             shell.pack();
-            createStructure = CreateStructureFactory.create(shell);
             stateMachine.setState(State.readyForConnect);
             shell.open();
             shell.addDisposeListener(this);
@@ -184,8 +188,26 @@ public class ChannelRPCFactory {
                     stateMachine.setState(State.readyForConnect);
                 }
             } else if(object==createArgumentButton) {
-            	Structure structure = createStructure.create();
+            	Structure structure = CreateStructureFactory.create(shell);
+            	if(structure==null) {
+            	    consoleText.append("createArgument failure");
+            	    return;
+            	}
             	pvArgument = pvDataCreate.createPVStructure(structure);
+            	consoleText.append(String.format("%n"));
+            	consoleText.append(pvArgument.toString());
+            } else if(object==showArgumentButton) {
+                consoleText.append(String.format("%n"));
+                consoleText.append(pvArgument.toString());
+            } else if(object==setArgumentButton) {
+                if(pvArgument==null) {
+                    consoleText.append(String.format("%n"));
+                    consoleText.append("argument is null");
+                    return;
+                }
+                GUIData guiData = GUIDataFactory.create();
+                BitSet bitSet = new BitSet(pvArgument.getNumberFields());
+                guiData.getStructure(shell,pvArgument,bitSet);
             } else if(object==createChannelRPCButton) {
                 State state = stateMachine.getState();
                 if(state==State.readyForCreateChannelRPC) {
@@ -196,10 +218,10 @@ public class ChannelRPCFactory {
                     stateMachine.setState(State.readyForCreateChannelRPC);
                 }
             } else if(object==channelRPCButton) {
-            	if(pvArgument!=null) {
-            		GUIData guiData = GUIDataFactory.create(shell);
-            		BitSet bitSet = new BitSet(pvArgument.getNumberFields());
-            		guiData.get(pvArgument,bitSet);
+            	if(pvArgument==null) {
+            	    consoleText.append(String.format("%n"));
+                    consoleText.append("argument is null");
+                    return;
             	}
             	stateMachine.setState(State.channelRPCActive);
             	channelClient.get();
