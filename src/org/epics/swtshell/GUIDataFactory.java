@@ -244,7 +244,7 @@ public class GUIDataFactory {
             private boolean get() {
                 Union union = pvUnion.getUnion();
                 if(union.isVariant()) {
-                    Field field = CreateFieldFactory.create(super.getParent()).create("create subfields for variant union");
+                    Field field = CreateFieldFactory.create(super.getParent()).create("create subfield for variant union");
                     if(field==null) return false;
                     PVField pvField = pvDataCreate.createPVField(field);
                     GUIData guiData = GUIDataFactory.create();

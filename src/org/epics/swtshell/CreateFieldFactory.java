@@ -115,7 +115,7 @@ public class CreateFieldFactory {
             {
                 Structure structure = CreateStructureFactory.create(super.getParent());
                 if(structure==null) return null;
-                return fieldCreate.createStructureArray(structure);
+                return fieldCreate.createStructure(structure);
             }
             case structureArray:
             {
