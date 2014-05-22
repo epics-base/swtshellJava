@@ -297,7 +297,6 @@ public class PutGetFactory {
                 createRequest.create();
             }
             void createPutGet(PVStructure pvRequest) {
-System.out.println("calling createChannelPutGet");
                 channelPutGet = channel.createChannelPutGet(this,pvRequest);
                 return;
             }
