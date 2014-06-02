@@ -8,11 +8,11 @@ package org.epics.swtshell;
 import org.epics.pvaccess.client.ChannelRequester;
 
 /**
- * Requester for a CreateFieldRequest.
+ * Requester for a CreateRequestArg.
  * @author mrk
  *
  */
-public interface CreateFieldRequestRequester extends ChannelRequester
+public interface CreateRequestArgRequester extends ChannelRequester
 {
 	/**
 	 * Get the default field request string.

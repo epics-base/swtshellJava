@@ -11,8 +11,11 @@ package org.epics.swtshell;
  *
  */
 public interface GetInteger {
+   
     /**
-     * Create the request
+     * get an integer.
+     * @param prompt A prompt.
+     * @return and integer.
      */
     int getInteger(String prompt);
 }

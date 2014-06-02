@@ -3,6 +3,7 @@ package org.epics.swtshell;
 public class Swtshell {
 
     /**
+     * swtshell main.
      * @param args
      */
     public static void main(String[] args) {

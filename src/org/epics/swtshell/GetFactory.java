@@ -39,7 +39,7 @@ import org.epics.pvdata.pv.Structure;
  */
 public class GetFactory {
     /**
-     * Create the shell. 
+     * Initialize a display for channelGet requests.
      * @param display The display to which the shell belongs.
      */
     public static void init(Display display) {
@@ -251,7 +251,7 @@ public class GetFactory {
         }
         
         private class ChannelClient implements
-        ChannelRequester,ConnectChannelRequester,CreateFieldRequestRequester,Runnable,ChannelGetRequester
+        ChannelRequester,ConnectChannelRequester,CreateRequestArgRequester,Runnable,ChannelGetRequester
         {
             private Channel channel = null;
             private ConnectChannel connectChannel = null;
@@ -269,7 +269,7 @@ public class GetFactory {
             }
             
             void createRequest(Shell shell) {
-                CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
+                CreateRequestArg createRequest = CreateRequestArgFactory.create(shell, channel, this);
                 createRequest.create();
             }
             void createGet(PVStructure pvRequest) {

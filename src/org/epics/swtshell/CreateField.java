@@ -7,13 +7,13 @@ package org.epics.swtshell;
 import org.epics.pvdata.pv.Field;
 
 /**
- * Create a PVStructure
+ * Create a Field
  * @author mrk
  *
  */
 public interface CreateField {
     /**
-     * Create the request
+     * Create the field.
      */
     Field create(String prompt);
 }

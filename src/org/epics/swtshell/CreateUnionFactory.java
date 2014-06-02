@@ -11,7 +11,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.List;
@@ -21,12 +20,17 @@ import org.epics.pvdata.pv.FieldCreate;
 import org.epics.pvdata.pv.Union;
 
 /**
- * Factory which implements CreateField
+ * Factory which implements CreateUnion
  * @author mrk
  *
  */
 public class CreateUnionFactory {
   
+    /**
+     * Create a CreateUnion.
+     * @param parent the parent shell
+     * @return The interface.
+     */
     public static CreateUnion create(Shell parent) {
         return new CreatUnionImpl(parent);
     }
@@ -34,9 +38,9 @@ public class CreateUnionFactory {
         private static final FieldCreate fieldCreate = FieldFactory.getFieldCreate();
         private Shell parent = null;
         private Shell shell = null;
-        private Button doneButton = null;
         private List typeList = null;
-        private int indFieldSelected = -1;
+        private Union union = null;
+        private boolean firstTime = true;
 
         /**
          * Constructor.
@@ -64,9 +68,6 @@ public class CreateUnionFactory {
             shellData.grabExcessHorizontalSpace = true;
             shell.setLayout(gridLayout);
             shell.setLayoutData(shellData);
-            doneButton = new Button(shell,SWT.PUSH);
-            doneButton.setText("Done");
-            doneButton.addSelectionListener(this);
             typeList = new List(shell,SWT.BORDER | SWT.H_SCROLL);
             typeList.addSelectionListener(this);
             GridData typeListData = new GridData();
@@ -84,11 +85,7 @@ public class CreateUnionFactory {
                 }
             }
             shell.dispose();
-            if(indFieldSelected==-1) return null;
-            if(indFieldSelected==0) return createVariant();
-            CreateSubFields createSubFields = CreateSubFieldsFactory.create(parent.getShell());
-            if(!createSubFields.create(prompt)) return null;
-            return fieldCreate.createUnion(createSubFields.getFieldNames(),createSubFields.getFields());
+            return union;
         }
 
         /* (non-Javadoc)
@@ -104,12 +101,23 @@ public class CreateUnionFactory {
         @Override
         public void widgetSelected(SelectionEvent e) {
             Object object = e.getSource();
-            if(object==doneButton) {
-                shell.close();
-                return;
-            }
+            
             if(object==typeList) {
-                indFieldSelected = typeList.getFocusIndex();
+                if(firstTime) {
+                    firstTime = false;
+                    return;
+                }
+                int indSelected = typeList.getFocusIndex();
+                if(indSelected==0) {
+                    union = fieldCreate.createVariantUnion();
+                }
+                if(indSelected==1) {
+                    CreateSubFields createSubFields = CreateSubFieldsFactory.create(shell);
+                    if(createSubFields.create("variantFields")) {
+                        union = fieldCreate.createUnion(createSubFields.getFieldNames(),createSubFields.getFields());
+                    }
+                }
+                shell.close();
                 return;
             }
         }

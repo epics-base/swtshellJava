@@ -27,9 +27,9 @@ import org.epics.pvdata.pv.Field;
  */
 public class CreateSubFieldsFactory {
     /**
-     * Create a CDGet and return the interface.
+     * Create a CreateSubFields and return the interface.
      * @param parent The parent shell.
-     * @return The CDGet interface.
+     * @return The interface.
      */
     public static CreateSubFields create(Shell parent) {
         return new CreateSubFieldsImpl(parent);

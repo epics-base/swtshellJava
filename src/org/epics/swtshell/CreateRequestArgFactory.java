@@ -20,12 +20,10 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.epics.pvaccess.client.Channel;
 import org.epics.pvaccess.client.GetFieldRequester;
-import org.epics.pvdata.factory.ConvertFactory;
 import org.epics.pvdata.factory.PVDataFactory;
 import org.epics.pvdata.misc.BitSet;
 import org.epics.pvdata.misc.Executor;
 import org.epics.pvdata.misc.ExecutorNode;
-import org.epics.pvdata.pv.Convert;
 import org.epics.pvdata.pv.Field;
 import org.epics.pvdata.pv.MessageType;
 import org.epics.pvdata.pv.PVDataCreate;
@@ -36,32 +34,32 @@ import org.epics.pvdata.pv.Structure;
 import org.epics.pvdata.pv.Type;
 
 /**
- * Shell for creating a PVStructure for a pvRequest.
+ * Shell for creating a creating an argument to pass to createRequust.
+ * createRequest has a string argument and returns a pvStructure that is passed to pvAccess create methods.
  * @author mrk
  *
  */
-public class CreateFieldRequestFactory {
+public class CreateRequestArgFactory {
     /**
      * Create a create request.
      * @param parent The parent shell.
      * @param channel The channel.
-     * @param createFieldRequestRequester The requester.
+     * @param CreateRequestArgRequester The requester.
      * @return The CreateRequest interface.
      */
-    public static CreateFieldRequest create(Shell parent,Channel channel,CreateFieldRequestRequester createFieldRequestRequester) {
+    public static CreateRequestArg create(Shell parent,Channel channel,CreateRequestArgRequester createFieldRequestRequester) {
         return new CreateFieldRequestImpl(parent,channel,createFieldRequestRequester);
     }
     
     private static final PVDataCreate pvDataCreate = PVDataFactory.getPVDataCreate();
-    private static final Convert convert = ConvertFactory.getConvert();
     private static Executor executor = SwtshellFactory.getExecutor();
     
     private static class CreateFieldRequestImpl extends Dialog
-    implements CreateFieldRequest,GetFieldRequester,SelectionListener,Runnable  {
+    implements CreateRequestArg,GetFieldRequester,SelectionListener,Runnable  {
         
-        private CreateFieldRequestImpl(Shell parent,Channel channel,CreateFieldRequestRequester createFieldRequestRequester) {
+        private CreateFieldRequestImpl(Shell parent,Channel channel,CreateRequestArgRequester createRequestArgRequester) {
             super(parent,SWT.DIALOG_TRIM|SWT.NONE);
-            this.createFieldRequestRequester = createFieldRequestRequester;
+            this.createRequestArgRequester = createRequestArgRequester;
             this.parent = parent;
             this.channel = channel;
             display = parent.getDisplay();
@@ -69,7 +67,7 @@ public class CreateFieldRequestFactory {
         
         private Shell parent = null;
         private Channel channel = null;
-        private CreateFieldRequestRequester createFieldRequestRequester;
+        private CreateRequestArgRequester createRequestArgRequester;
         private Display display = null;
         
         private ExecutorNode executorNode = null;
@@ -106,7 +104,7 @@ public class CreateFieldRequestFactory {
             GridData gridData = new GridData(); 
             gridData.widthHint = 400;
             requestText.setLayoutData(gridData);
-            requestText.setText(createFieldRequestRequester.getDefault());
+            requestText.setText(createRequestArgRequester.getDefault());
             requestText.addSelectionListener(this);
             shell.pack();
             shell.open();
@@ -135,7 +133,7 @@ public class CreateFieldRequestFactory {
                 executor.execute(executorNode);
             } else if(object==doneButton) {
                 try{
-                    createFieldRequestRequester.request(requestText.getText());
+                    createRequestArgRequester.request(requestText.getText());
                     shell.close();
                 } catch (IllegalArgumentException e) {
                     message("illegal request value",MessageType.error);
@@ -164,14 +162,14 @@ public class CreateFieldRequestFactory {
          */
         @Override
         public String getRequesterName() {
-            return createFieldRequestRequester.getRequesterName();
+            return createRequestArgRequester.getRequesterName();
         }
         /* (non-Javadoc)
          * @see org.epics.pvdata.pv.Requester#message(java.lang.String, org.epics.pvdata.pv.MessageType)
          */
         @Override
         public void message(String message, MessageType messageType) {
-            createFieldRequestRequester.message(message, messageType);
+            createRequestArgRequester.message(message, messageType);
         }
         /* (non-Javadoc)
          * @see java.lang.Runnable#run()
@@ -207,9 +205,7 @@ public class CreateFieldRequestFactory {
         		if(nextSet>=next) continue;
         		if(nextSet==offset) {
         			if(request.length()>1 && (request.charAt(request.length()-1) != '{')) request += ",";
-        			StringBuilder builder = new StringBuilder();
-        			convert.getFullFieldName(builder,pvField);
-        			request += builder.toString();
+        			request += pvField.getFieldName();
         		} else if(pvField.getField().getType()==Type.structure) {
         			if(request.length()>1 && (request.charAt(request.length()-1) != '{')) request += ",";
         			request += pvField.getFieldName();

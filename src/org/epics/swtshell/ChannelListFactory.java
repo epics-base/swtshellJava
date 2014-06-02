@@ -48,6 +48,9 @@ import org.epics.pvdata.pv.Structure;
 
 /**
  * @author mrk
+ * Get the list of channels in a V4 server.
+ * This requires that the server has a record with the name xxxrecordListPGRPC
+ * where xxx is the iocname.
  *
  */
 public class ChannelListFactory {
@@ -93,18 +96,17 @@ public class ChannelListFactory {
             new Label(provider,SWT.RIGHT).setText("provider");
             providerCombo = new Combo(provider,SWT.SINGLE|SWT.BORDER);
             String[] names = channelProviderRegistry.getProviderNames();
-            int pvAcccesInd = 0;
+            int pvaInd = 0;
             for(int i=0; i<names.length; i++) {
-                if(names[i].equals("pvAccess")) {
-                    pvAcccesInd = i;
+                if(names[i].equals("pva")) {
+                    pvaInd = i;
                     break;
                 }
             }
             for(String name :names) {
                 providerCombo.add(name);
             }
-            providerCombo.select(pvAcccesInd);
-            
+            providerCombo.select(pvaInd);
             Composite composite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 2;

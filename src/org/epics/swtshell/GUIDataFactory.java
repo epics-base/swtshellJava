@@ -43,9 +43,9 @@ import org.epics.pvdata.pv.UnionArrayData;
  */
 public class GUIDataFactory {
     /**
-     * Create a CDGet and return the interface.
+     * Create a GUIData and return the interface.
      * @param parent The parent shell.
-     * @return The CDGet interface.
+     * @return The interface.
      */
     public static GUIData create() {
         return new GUIDataImpl();
@@ -158,7 +158,7 @@ public class GUIDataFactory {
                 GUIData guiData = GUIDataFactory.create();
                 guiData.getUnionValue(parent, pvStruct);
                 pvUnionArray.put(index, 1, pvUnions, 0);
-                
+                result = true;
             }
             return result;
         }
@@ -231,9 +231,10 @@ public class GUIDataFactory {
         private class GetUnion extends Dialog implements SelectionListener{
             private PVUnion pvUnion;
             private Shell shell;
-            private Button doneButton = null;
+            private Union union = null;
             private List fieldNameList = null;
-            private int indFieldSelected = -1;
+            private boolean result = false;
+            private boolean firstTime = true;
            
 
             private GetUnion(Shell parent,PVUnion pvField) {
@@ -242,7 +243,7 @@ public class GUIDataFactory {
             }
 
             private boolean get() {
-                Union union = pvUnion.getUnion();
+                union = pvUnion.getUnion();
                 if(union.isVariant()) {
                     Field field = CreateFieldFactory.create(super.getParent()).create("create subfield for variant union");
                     if(field==null) return false;
@@ -289,9 +290,7 @@ public class GUIDataFactory {
                 GridLayout gridLayout = new GridLayout();
                 gridLayout.numColumns = 1;
                 shell.setLayout(gridLayout);
-                doneButton = new Button(shell,SWT.PUSH);
-                doneButton.setText("Done");
-                doneButton.addSelectionListener(this);
+                
                 fieldNameList = new List(shell,SWT.SINGLE);
                 fieldNameList.addSelectionListener(this);
                 for(int i=0; i<fieldNames.length; ++i) fieldNameList.add(fieldNames[i]);
@@ -304,47 +303,7 @@ public class GUIDataFactory {
                     }
                 }
                 shell.dispose();
-                if(indFieldSelected==-1) return false;
-                Field field = union.getField(indFieldSelected);
-                pvUnion.select(indFieldSelected);
-                if(field==null) return false;
-                PVField pvField = pvDataCreate.createPVField(field);
-                GUIData guiData = GUIDataFactory.create();
-                Type type = pvField.getField().getType();
-                switch(type) {
-                case scalar: {
-                    if(!guiData.getScalarValue(super.getParent(),(PVScalar)pvField)) return false;
-                    pvUnion.set(pvField);
-                    return true;
-                }
-                case union: {
-                    if(!guiData.getUnionValue(super.getParent(),(PVUnion)pvField)) return false;
-                    pvUnion.set(pvField);
-                    return true;
-                }
-                case scalarArray: {
-                    if(!guiData.getScalarArray(super.getParent(),(PVScalarArray)pvField)) return false;
-                    pvUnion.set(pvField);
-                    return true;
-                }
-                case structure: {
-                    PVStructure pvStruct = (PVStructure)pvField;
-                    BitSet bitSet = new BitSet(pvStruct.getNumberFields());
-                    guiData.getStructure(super.getParent(),pvStruct,bitSet);
-                    return !bitSet.isEmpty();
-                }
-                case structureArray: {
-                    if(!guiData.getStructureArray(super.getParent(),(PVStructureArray)pvField)) return false;
-                    pvUnion.set(pvField);
-                    return true;
-                }   
-                case unionArray: {
-                    if(!guiData.getUnionArray(super.getParent(),(PVUnionArray)pvField)) return false;
-                    pvUnion.set(pvField);
-                    return true;
-                }
-                }
-                return false;
+                return result;
             }
 
             /* (non-Javadoc)
@@ -360,13 +319,57 @@ public class GUIDataFactory {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 Object object = e.getSource();
-                if(object==doneButton) {
-                    shell.close();
-                    return;
-                }
                 if(object==fieldNameList) {
-                    indFieldSelected = fieldNameList.getFocusIndex();
-                    return;
+                    if(firstTime) {
+                        firstTime = false;
+                        return;
+                    }
+                    int indFieldSelected = fieldNameList.getFocusIndex();
+                    Field field = union.getField(indFieldSelected);
+                    pvUnion.select(indFieldSelected);
+                    if(field==null) return;
+                    PVField pvField = pvDataCreate.createPVField(field);
+                    GUIData guiData = GUIDataFactory.create();
+                    Type type = pvField.getField().getType();
+                    switch(type) {
+                    case scalar: {
+                        if(!guiData.getScalarValue(super.getParent(),(PVScalar)pvField))break;
+                        pvUnion.set(pvField);
+                        result = true;
+                        break;
+                    }
+                    case union: {
+                        if(!guiData.getUnionValue(super.getParent(),(PVUnion)pvField)) break;
+                        pvUnion.set(pvField);
+                        result = true;
+                        break;
+                    }
+                    case scalarArray: {
+                        if(!guiData.getScalarArray(super.getParent(),(PVScalarArray)pvField)) break;
+                        pvUnion.set(pvField);
+                        result = true;
+                        break;
+                    }
+                    case structure: {
+                        PVStructure pvStruct = (PVStructure)pvField;
+                        BitSet bitSet = new BitSet(pvStruct.getNumberFields());
+                        guiData.getStructure(super.getParent(),pvStruct,bitSet);
+                        result = !bitSet.isEmpty();
+                        break;
+                    }
+                    case structureArray: {
+                        if(!guiData.getStructureArray(super.getParent(),(PVStructureArray)pvField)) break;
+                        pvUnion.set(pvField);
+                        result = true;
+                        break;
+                    }   
+                    case unionArray: {
+                        if(!guiData.getUnionArray(super.getParent(),(PVUnionArray)pvField)) break;
+                        pvUnion.set(pvField);
+                        break;
+                    }
+                    }
+                    shell.close();
                 }
 
             }

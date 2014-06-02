@@ -41,7 +41,7 @@ import org.epics.pvdata.pv.StructureArrayData;
 import org.epics.pvdata.pv.Type;
 
 /**
- * Shell for processing a channel.
+ * Shell for channelArray request for a structureArray field.
  * @author mrk
  *
  */

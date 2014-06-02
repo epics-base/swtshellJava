@@ -6,13 +6,14 @@
 package org.epics.swtshell;
 
 /**
+ * Create an argument to pass to createRequust.
+ * createRequest has a string argument and returns a pvStructure that is passed to pvAccess create methods.
  * @author mrk
- * Callback for channelConnect
  *
  */
-public interface ConnectChannelRequester {
+public interface CreateRequestArg {
     /**
-     * The channel has not connected.
+     * Create the request
      */
-    void timeout();
+    void create();
 }

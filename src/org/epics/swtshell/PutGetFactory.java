@@ -36,7 +36,7 @@ import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.Structure;
 
 /*
- * A shell for channelGet.
+ * A shell for channelPutGet.
  * @author mrk
  *
  */
@@ -195,7 +195,9 @@ public class PutGetFactory {
         		}
         	} else if(object==putGetButton) {
         		GUIData guiData = GUIDataFactory.create();
-        		guiData.getStructure(shell,channelClient.getPutPVStructure(),channelClient.getPutBitSet());
+        		BitSet bitSet = channelClient.getPutBitSet();
+        		bitSet.clear();
+        		guiData.getStructure(shell,channelClient.getPutPVStructure(),bitSet);
         		stateMachine.setState(State.putGetActive);
         		channelClient.putGet();
         	}
@@ -267,7 +269,7 @@ public class PutGetFactory {
        
         
         private class ChannelClient implements
-        ChannelRequester,ConnectChannelRequester,CreateFieldRequestRequester,Runnable,ChannelPutGetRequester
+        ChannelRequester,ConnectChannelRequester,CreateRequestArgRequester,Runnable,ChannelPutGetRequester
         {
             private Channel channel = null;
             private ConnectChannel connectChannel = null;
@@ -288,12 +290,12 @@ public class PutGetFactory {
             }
             void createPutRequest(Shell shell) {
                 isPutRequest = true;
-                CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
+                CreateRequestArg createRequest = CreateRequestArgFactory.create(shell, channel, this);
                 createRequest.create();
             }
             void createGetRequest(Shell shell) {
                 isPutRequest = false;
-                CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
+                CreateRequestArg createRequest = CreateRequestArgFactory.create(shell, channel, this);
                 createRequest.create();
             }
             void createPutGet(PVStructure pvRequest) {
@@ -428,7 +430,6 @@ public class PutGetFactory {
                 this.channelPutGet = channelPutGet;
                 pvPutStructure = pvDataCreate.createPVStructure(putStructure);
                 putBitSet = new BitSet(pvPutStructure.getNumberFields());
-System.out.println("calling channelPutGet.getPut(");
                 channelPutGet.getPut();
             }
             @Override
@@ -441,7 +442,6 @@ System.out.println("calling channelPutGet.getPut(");
             public void getPutDone(Status status, ChannelPutGet channelPutGet,
                     PVStructure putPVStructure, BitSet putBitSet)
             {
-System.out.println("getPutDone");
                 convert.copyStructure(pvPutStructure,this.pvPutStructure);
                 runCommand = RunCommand.getPutDone;
                 shell.getDisplay().asyncExec(this);

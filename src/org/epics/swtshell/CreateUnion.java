@@ -7,14 +7,20 @@ package org.epics.swtshell;
 import org.epics.pvdata.pv.Union;
 
 /**
- * Create a PVStructure
+ * Create a Union
  * @author mrk
  *
  */
 public interface CreateUnion {
     /**
-     * Create the request
+     * Create a union
+     * @param prompt A prompt string
+     * @return The Union.
      */
     Union create(String prompt);
+    /**
+     * create a variant union.
+     * @return The Union
+     */
     Union createVariant();
 }

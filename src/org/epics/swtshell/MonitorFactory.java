@@ -312,7 +312,7 @@ public class MonitorFactory {
         }
          
         private class ChannelClient implements
-        ChannelRequester,ConnectChannelRequester,CreateFieldRequestRequester,
+        ChannelRequester,ConnectChannelRequester,CreateRequestArgRequester,
         Runnable,
         MonitorRequester
         {
@@ -331,7 +331,7 @@ public class MonitorFactory {
                 connectChannel.connect();
             }
             void createRequest(Shell shell) {
-                CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
+                CreateRequestArg createRequest = CreateRequestArgFactory.create(shell, channel, this);
                 createRequest.create();
             }
             void disconnect() {

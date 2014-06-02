@@ -41,7 +41,7 @@ import org.epics.pvdata.pv.UnionArray;
 import org.epics.pvdata.pv.UnionArrayData;
 
 /**
- * Shell for processing a channel.
+ * Shell for channelArray request for a unionArray field.
  * @author mrk
  *
  */

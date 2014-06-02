@@ -17,15 +17,15 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 /**
- * Factory which implements CDGet.
+ * Factory which implements GetInteger
  * @author mrk
  *
  */
 public class GetIntegerFactory {
     /**
-     * Create a CDGet and return the interface.
+     * Create a GetInteger and return the interface.
      * @param parent The parent shell.
-     * @return The CDGet interface.
+     * @return The interface.
      */
     public static GetInteger create(Shell parent) {
         return new GetNumberOfImpl(parent);

@@ -40,7 +40,7 @@ import org.epics.pvdata.pv.Type;
 
 
 /**
- * Shell for processing a channel.
+ * Shell for channelArray requests for a scalarArray field.
  * @author mrk
  *
  */

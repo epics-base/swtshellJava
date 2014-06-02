@@ -11,7 +11,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.List;
@@ -31,20 +30,23 @@ import org.epics.pvdata.pv.Union;
  */
 public class CreateFieldFactory {
     /**
-     * Create a CDGet and return the interface.
+     * Create a Field and return the interface.
      * @param parent The parent shell.
-     * @return The CDGet interface.
+     * @return The CreateField interface.
      */
     public static CreateField create(Shell parent) {
         return new CreateFieldImpl(parent);
     }
     private static class CreateFieldImpl extends Dialog implements CreateField, SelectionListener {
         private static final FieldCreate fieldCreate = FieldFactory.getFieldCreate();
+        private static String[] typeNames = new String[] {
+                "scalar","scalarArray","structure","structureArray","union","unionArray"
+        };
         private Shell parent = null;
         private Shell shell = null;
         private List typeList = null;
-        private Button doneButton = null;
-        private int indFieldSelected = -1;
+        private Field field = null;
+        private boolean firstTime = true;
 
         /**
          * Constructor.
@@ -55,7 +57,7 @@ public class CreateFieldFactory {
             this.parent = parent;
         }
         /* (non-Javadoc)
-         * @see org.epics.pvioc.swtshell.CreateStructure#create()
+         * @see org.epics.swtshell.CreateField#create(java.lang.String)
          */
         @Override
         public Field create(String prompt) {
@@ -68,13 +70,6 @@ public class CreateFieldFactory {
             shellData.grabExcessHorizontalSpace = true;
             shell.setLayout(gridLayout);
             shell.setLayoutData(shellData);
-            doneButton = new Button(shell,SWT.PUSH);
-            doneButton.setText("Done");
-            doneButton.addSelectionListener(this);
-            String[] typeNames = new String[] {
-                    "scalar","scalarArray","structure","structureArray","union","unionArray"
-            };
-
             typeList = new List(shell,SWT.BORDER | SWT.H_SCROLL);
             typeList.addSelectionListener(this);
             GridData typeListData = new GridData();
@@ -91,47 +86,7 @@ public class CreateFieldFactory {
                 }
             }
             shell.dispose();
-            if(indFieldSelected==-1) return null;
-            Type type = Type.valueOf(typeNames[indFieldSelected]);
-            switch(type) {
-            case scalar:
-            {
-                ScalarType scalarType = new GetScalarType(super.getParent()).get("scalarType");
-                if(scalarType==null) return null;
-                return fieldCreate.createScalar(scalarType);
-                
-            }
-            case union:
-            {
-                return CreateUnionFactory.create(super.getParent()).create("create union");
-            }
-            case scalarArray:
-            {
-                ScalarType scalarType = new GetScalarType(super.getParent()).get("scalarType");
-                if(scalarType==null) return null;
-                return fieldCreate.createScalarArray(scalarType);
-            }
-            case structure:
-            {
-                Structure structure = CreateStructureFactory.create(super.getParent());
-                if(structure==null) return null;
-                return fieldCreate.createStructure(structure);
-            }
-            case structureArray:
-            {
-                Structure structure = CreateStructureFactory.create(super.getParent());
-                if(structure==null) return null;
-                return fieldCreate.createStructureArray(structure);
-            }
-
-            case unionArray:
-            {
-                Union union = CreateUnionFactory.create(super.getParent()).create("create union");
-                if(union==null) return null;
-                return fieldCreate.createUnionArray(union);
-            }
-            }
-            return null;
+            return field;
         }
 
         /* (non-Javadoc)
@@ -147,24 +102,77 @@ public class CreateFieldFactory {
         @Override
         public void widgetSelected(SelectionEvent e) {
             Object object = e.getSource();
-            if(object==doneButton) {
-                shell.close();
-                return;
-            }
             if(object==typeList) {
-                indFieldSelected = typeList.getFocusIndex();
-                return;
+                if(firstTime) {
+                    firstTime = false;
+                    return;
+                }
+                int indFieldSelected = typeList.getFocusIndex();
+                if(indFieldSelected<0) {
+                    shell.close();
+                    return;
+                }
+                Type type = Type.valueOf(typeNames[indFieldSelected]);
+                switch(type) {
+                case scalar:
+                {
+                    ScalarType scalarType = new GetScalarType(super.getParent()).get("scalarType");
+                    if(scalarType==null) break;
+                    field = fieldCreate.createScalar(scalarType);
+                    break;
+                    
+                }
+                case union:
+                {
+                    field = CreateUnionFactory.create(super.getParent()).create("create union");
+                    break;
+                }
+                case scalarArray:
+                {
+                    ScalarType scalarType = new GetScalarType(super.getParent()).get("scalarType");
+                    if(scalarType==null) break;
+                    field = fieldCreate.createScalarArray(scalarType);
+                    break;
+                }
+                case structure:
+                {
+                    field = CreateStructureFactory.create(super.getParent()).create("subfield");
+                    break;
+                }
+                case structureArray:
+                {
+                    Structure structure = CreateStructureFactory.create(super.getParent()).create("subfield");
+                    if(structure==null) break;
+                    field = fieldCreate.createStructureArray(structure);
+                    break;
+                }
+
+                case unionArray:
+                {
+                    Union union = CreateUnionFactory.create(super.getParent()).create("create union");
+                    if(union==null) break;
+                    field = fieldCreate.createUnionArray(union);
+                    break;
+                }
+                }
+                shell.close();
+                
             }
         }
 
     }
 
     private static class GetScalarType extends Dialog implements  SelectionListener {
+        private static final String[] typeNames = new String[] {
+                "boolean","byte","short","int","long",
+                "ubyte","ushort","uint","ulong",
+                "float","double","string"
+        };
         private Shell parent = null;
         private Shell shell = null;
-        private Button doneButton = null;
         private List typeList = null;
-        private int indFieldSelected = -1;
+        private ScalarType scalarType = null;
+        private boolean firstTime = true;
 
         /**
          * Constructor.
@@ -185,17 +193,7 @@ public class CreateFieldFactory {
             shellData.grabExcessHorizontalSpace = true;
             shell.setLayout(gridLayout);
             shell.setLayoutData(shellData);
-            doneButton = new Button(shell,SWT.PUSH);
-            doneButton.setText("Done");
-            doneButton.addSelectionListener(this);
-
-            String[] typeNames = new String[] {
-                    "boolean","byte","short","int","long",
-                    "ubyte","ushort","uint","ulong",
-                    "float","double","string"
-            };
-
-                        typeList = new List(shell,SWT.BORDER | SWT.H_SCROLL);
+            typeList = new List(shell,SWT.BORDER | SWT.H_SCROLL);
             typeList.addSelectionListener(this);
             GridData typeListData = new GridData();
             typeListData.minimumWidth = 300;
@@ -211,8 +209,7 @@ public class CreateFieldFactory {
                 }
             }
             shell.dispose();
-            if(indFieldSelected==-1) return null;
-            return ScalarType.getScalarType(typeNames[indFieldSelected]);
+            return scalarType;
         }
 
         /* (non-Javadoc)
@@ -228,12 +225,14 @@ public class CreateFieldFactory {
         @Override
         public void widgetSelected(SelectionEvent e) {
             Object object = e.getSource();
-            if(object==doneButton) {
-                shell.close();
-                return;
-            }
             if(object==typeList) {
-                indFieldSelected = typeList.getFocusIndex();
+                if(firstTime) {
+                    firstTime = false;
+                    return;
+                }
+                int indFieldSelected = typeList.getFocusIndex();
+                scalarType = ScalarType.getScalarType(typeNames[indFieldSelected]);
+                shell.close();
                 return;
             }
 

@@ -4,15 +4,16 @@
  * in file LICENSE that is included with this distribution.
  */
 package org.epics.swtshell;
+import org.epics.pvdata.pv.Structure;
 
 /**
- * Create a request PVStructure for channel access.
+ * Create a Structure
  * @author mrk
  *
  */
-public interface CreateFieldRequest {
+public interface CreateStructure {
     /**
      * Create the request
      */
-    void create();
+    Structure create(String prompt);
 }

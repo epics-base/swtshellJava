@@ -92,18 +92,18 @@ public class ConnectChannelFactory {
             new Label(provider,SWT.RIGHT).setText("provider");
             providerCombo = new Combo(provider,SWT.SINGLE|SWT.BORDER);
             String[] names = channelProviderRegistry.getProviderNames();
-            int pvAcccesInd = 0;
+            int pvaInd = 0;
             for(int i=0; i<names.length; i++) {
-                if(names[i].equals("pvAccess")) {
-                    pvAcccesInd = i;
+                if(names[i].equals("pva")) {
+                    pvaInd = i;
                     break;
                 }
             }
-            providerName = names[pvAcccesInd];
+            providerName = names[pvaInd];
             for(String name :names) {
                 providerCombo.add(name);
             }
-            providerCombo.select(pvAcccesInd);
+            providerCombo.select(pvaInd);
             Composite timeout = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 2;

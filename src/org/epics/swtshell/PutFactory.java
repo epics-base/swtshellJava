@@ -36,7 +36,7 @@ import org.epics.pvdata.pv.Status;
 import org.epics.pvdata.pv.Structure;
 
 /*
- * A shell for channelGet.
+ * A shell for channelPut.
  * @author mrk
  *
  */
@@ -192,7 +192,9 @@ public class PutFactory {
                 }
             } else if(object==putButton) {
                GUIData guiData = GUIDataFactory.create();
-               guiData.getStructure(shell,channelClient.getPVStructure(), channelClient.getBitSet());
+               BitSet bitSet = channelClient.getBitSet();
+               bitSet.clear();
+               guiData.getStructure(shell,channelClient.getPVStructure(),bitSet);
                stateMachine.setState(State.putActive);
                channelClient.put();
             } else if(object==dumpButton) {
@@ -271,7 +273,7 @@ public class PutFactory {
        
         
         private class ChannelClient implements
-        ChannelRequester,ConnectChannelRequester,CreateFieldRequestRequester,Runnable,ChannelPutRequester
+        ChannelRequester,ConnectChannelRequester,CreateRequestArgRequester,Runnable,ChannelPutRequester
         {
             private Channel channel = null;
             private ConnectChannel connectChannel = null;
@@ -289,7 +291,7 @@ public class PutFactory {
                 connectChannel.connect();
             }
             void createRequest(Shell shell) {
-                CreateFieldRequest createRequest = CreateFieldRequestFactory.create(shell, channel, this);
+                CreateRequestArg createRequest = CreateRequestArgFactory.create(shell, channel, this);
                 createRequest.create();
             }
             void createPut(PVStructure pvRequest) {

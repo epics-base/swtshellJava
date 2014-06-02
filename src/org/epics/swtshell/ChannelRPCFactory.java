@@ -76,6 +76,7 @@ public class ChannelRPCFactory {
         private Button showArgumentButton;
         private Button setArgumentButton;
         private Button createChannelRPCButton;
+        private Button showResultButton;
         private Button channelRPCButton;
         private Text consoleText = null; 
         
@@ -115,6 +116,10 @@ public class ChannelRPCFactory {
             createChannelRPCButton = new Button(composite,SWT.PUSH);
             createChannelRPCButton.setText("destroyChannelRPC");
             createChannelRPCButton.addSelectionListener(this);
+            
+            showResultButton = new Button(composite,SWT.PUSH);
+            showResultButton.setText("showResult");
+            showResultButton.addSelectionListener(this);
             
             channelRPCButton = new Button(composite,SWT.NONE);
             channelRPCButton.setText("channelRPC");
@@ -188,7 +193,7 @@ public class ChannelRPCFactory {
                     stateMachine.setState(State.readyForConnect);
                 }
             } else if(object==createArgumentButton) {
-            	Structure structure = CreateStructureFactory.create(shell);
+            	Structure structure = CreateStructureFactory.create(shell).create("rpcArg");
             	if(structure==null) {
             	    consoleText.append("createArgument failure");
             	    return;
@@ -217,6 +222,15 @@ public class ChannelRPCFactory {
                     channelClient.destroyChannelRPC();
                     stateMachine.setState(State.readyForCreateChannelRPC);
                 }
+            }else if(object==showResultButton) {
+                consoleText.append(String.format("%n"));
+                PVStructure pvResult = channelClient.getResult();
+                if(pvResult==null) {
+                    consoleText.append("null");
+                } else {
+                    consoleText.append(pvResult.toString());
+                }
+                
             } else if(object==channelRPCButton) {
             	if(pvArgument==null) {
             	    consoleText.append(String.format("%n"));
@@ -288,6 +302,7 @@ public class ChannelRPCFactory {
             private ChannelRPC channelRPC = null;
             private RunCommand runCommand;
             private PrintModified printModified = null;
+            private PVStructure pvResult = null;
             private BitSet bitSet = null;
 
             void connect(Shell shell) {
@@ -321,6 +336,9 @@ public class ChannelRPCFactory {
                 channelRPC.request(pvArgument);
             }
             
+            PVStructure getResult() {
+                return pvResult;
+            }
             /* (non-Javadoc)
              * @see org.epics.pvaccess.client.ChannelRequester#channelStateChange(org.epics.pvaccess.client.Channel, org.epics.pvaccess.client.Channel.ConnectionState)
              */
@@ -387,6 +405,7 @@ public class ChannelRPCFactory {
             public void requestDone(Status status, ChannelRPC channelRPC,PVStructure pvResponse)
 			{
 			    if(pvResponse!=null && pvResponse.getNumberFields()>0) {
+			        pvResult = pvResponse;
 			        bitSet = new BitSet(pvResponse.getNumberFields());
 			        bitSet.set(0);
 			        BitSet overrunBitSet = new BitSet(pvResponse.getNumberFields());
