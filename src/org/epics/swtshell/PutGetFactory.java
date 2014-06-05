@@ -442,7 +442,7 @@ public class PutGetFactory {
             public void getPutDone(Status status, ChannelPutGet channelPutGet,
                     PVStructure putPVStructure, BitSet putBitSet)
             {
-                convert.copyStructure(pvPutStructure,this.pvPutStructure);
+                convert.copyStructure(putPVStructure,pvPutStructure);
                 runCommand = RunCommand.getPutDone;
                 shell.getDisplay().asyncExec(this);
             }

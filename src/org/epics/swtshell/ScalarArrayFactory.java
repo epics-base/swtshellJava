@@ -445,7 +445,12 @@ public class ScalarArrayFactory {
             }
   
             void get(int offset,int count,int stride) {
-                channelArray.getArray( offset, count,stride);
+                try {
+                    channelArray.getArray( offset, count,stride);
+                } catch (Exception e) {
+                    message("exception " + e.getMessage(),MessageType.error);
+                    return;
+                }
             }
             
             void  put(int offset,String value,int stride)
