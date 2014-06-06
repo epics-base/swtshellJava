@@ -553,10 +553,14 @@ public class ScalarArrayFactory {
             public void getArrayDone(Status status, ChannelArray channelArray, PVArray pvArray)
             {
                 if (!status.isOK()) {
-                	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
-                	if (!status.isSuccess()) return;
+                    message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
+                    if (!status.isSuccess()) return;
                 }
-                convert.copy(pvArray,this.pvArray);
+                if(pvArray==null) {
+                    this.pvArray.setLength(0);
+                } else {
+                    convert.copy(pvArray,this.pvArray);
+                }
                 runCommand = RunCommand.getDone;
                 shell.getDisplay().asyncExec(this);
                 

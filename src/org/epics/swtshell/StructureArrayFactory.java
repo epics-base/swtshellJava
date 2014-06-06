@@ -163,7 +163,7 @@ public class StructureArrayFactory {
             gridData = new GridData(); 
             gridData.widthHint = 100;
             countText.setLayoutData(gridData);
-            countText.setText("-1");
+            countText.setText("0");
             
             Composite putComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -218,7 +218,7 @@ public class StructureArrayFactory {
             gridData = new GridData(); 
             gridData.widthHint = 100;
             capacityText.setLayoutData(gridData);
-            capacityText.setText("-1");
+            capacityText.setText("0");
             
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -525,7 +525,7 @@ public class StructureArrayFactory {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
-                if(pvArray.getField().getType()!=Type.structureArray) {
+                if(array.getType()!=Type.structureArray) {
                 	message("The elementType is not structure",MessageType.error);
                 	return;
                 }
