@@ -132,6 +132,7 @@ public class ScalarArrayFactory {
             getButton = new Button(getComposite,SWT.PUSH);
             getButton.setText("get");
             getButton.addSelectionListener(this);
+            
             Composite offsetComposite = new Composite(getComposite,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 2;

@@ -81,13 +81,16 @@ public class UnionArrayFactory {
         private Button getButton = null;
         private Text getOffsetText = null;
         private Text getStrideText = null;
-        private Text countText = null;
+        private Text getCountText = null;
         
-        private Button putButton = null;
         private Button putElementButton = null;
-        private Text putOffsetText = null;
+        private Text indexText = null;
 
-        
+        private Button putButton = null;
+        private Text putOffsetText = null;
+        private Text putStrideText = null;
+        private Text putCountText = null;
+
         private Button getLengthButton = null;
         private Button setLengthButton = null;
         private Text lengthText = null;
@@ -133,7 +136,6 @@ public class UnionArrayFactory {
             getButton = new Button(getComposite,SWT.PUSH);
             getButton.setText("get");
             getButton.addSelectionListener(this);
-
             Composite offsetComposite = new Composite(getComposite,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 2;
@@ -159,35 +161,70 @@ public class UnionArrayFactory {
             gridLayout.numColumns = 3;
             countComposite.setLayout(gridLayout);
             new Label(countComposite,SWT.NONE).setText("count");
-            countText = new Text(countComposite,SWT.BORDER);
+            getCountText = new Text(countComposite,SWT.BORDER);
             gridData = new GridData(); 
             gridData.widthHint = 100;
-            countText.setLayoutData(gridData);
-            countText.setText("-1");
+            getCountText.setLayoutData(gridData);
+            getCountText.setText("0");
+            
+            
+            Composite putElementComposite = new Composite(shell,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 2;
+            putElementComposite.setLayout(gridLayout);
+            gridData = new GridData(GridData.FILL_HORIZONTAL);
+            putElementComposite.setLayoutData(gridData);
+            putElementButton = new Button(putElementComposite,SWT.PUSH);
+            putElementButton.setText("putElement");
+            putElementButton.addSelectionListener(this);
+            Composite indexComposite = new Composite(putElementComposite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 2;
+            indexComposite.setLayout(gridLayout);
+            new Label(indexComposite,SWT.NONE).setText("index");
+            indexText = new Text(indexComposite,SWT.BORDER);
+            gridData = new GridData(); 
+            gridData.widthHint = 100;
+            indexText.setLayoutData(gridData);
+            indexText.setText("0");
             
             Composite putComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 4;
             putComposite.setLayout(gridLayout);
-            gridData = new GridData(GridData.FILL_HORIZONTAL);
-            putComposite.setLayoutData(gridData);
             putButton = new Button(putComposite,SWT.PUSH);
             putButton.setText("put");
             putButton.addSelectionListener(this);
-            putElementButton = new Button(putComposite,SWT.PUSH);
-            putElementButton.setText("putElement");
-            putElementButton.addSelectionListener(this);
             offsetComposite = new Composite(putComposite,SWT.BORDER);
             gridLayout = new GridLayout();
             gridLayout.numColumns = 2;
             offsetComposite.setLayout(gridLayout);
-            new Label(offsetComposite,SWT.NONE).setText("index");
+            new Label(offsetComposite,SWT.NONE).setText("offset");
             putOffsetText = new Text(offsetComposite,SWT.BORDER);
             gridData = new GridData(); 
             gridData.widthHint = 100;
             putOffsetText.setLayoutData(gridData);
             putOffsetText.setText("0");
-            
+            strideComposite = new Composite(putComposite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 2;
+            strideComposite.setLayout(gridLayout);
+            new Label(strideComposite,SWT.NONE).setText("stride");
+            putStrideText = new Text(strideComposite,SWT.BORDER);
+            gridData = new GridData(); 
+            gridData.widthHint = 100;
+            putStrideText.setLayoutData(gridData);
+            putStrideText.setText("1");
+            countComposite = new Composite(putComposite,SWT.BORDER);
+            gridLayout = new GridLayout();
+            gridLayout.numColumns = 3;
+            countComposite.setLayout(gridLayout);
+            new Label(countComposite,SWT.NONE).setText("count");
+            putCountText = new Text(countComposite,SWT.BORDER);
+            gridData = new GridData(); 
+            gridData.widthHint = 100;
+            putCountText.setLayoutData(gridData);
+            putCountText.setText("0");
             
             Composite setLengthComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -218,7 +255,7 @@ public class UnionArrayFactory {
             gridData = new GridData(); 
             gridData.widthHint = 100;
             capacityText.setLayoutData(gridData);
-            capacityText.setText("-1");
+            capacityText.setText("0");
             
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -295,7 +332,7 @@ public class UnionArrayFactory {
             } else if(object==getButton) {
                 stateMachine.setState(State.active);
                 int offset = Integer.parseInt(getOffsetText.getText());
-                int count = Integer.parseInt(countText.getText());
+                int count = Integer.parseInt(getCountText.getText());
                 int stride = Integer.parseInt(getStrideText.getText());
                 channelClient.get(offset, count,stride);
             } else if(object==putElementButton) {
@@ -305,8 +342,10 @@ public class UnionArrayFactory {
             	guiData.getUnionValue(shell,pvUnion);
             } else if(object==putButton) {
                 stateMachine.setState(State.active);
-                int offset = Integer.parseInt(getOffsetText.getText());
-                channelClient.put(offset);
+                int offset = Integer.parseInt(putOffsetText.getText());
+                int count = Integer.parseInt(putCountText.getText());
+                int stride = Integer.parseInt(putStrideText.getText());
+                channelClient.put(offset,count,stride);
             } else if(object==getLengthButton) {
                 channelClient.getLength();
             } else if(object==setLengthButton) {
@@ -447,12 +486,21 @@ public class UnionArrayFactory {
             }
   
             void get(int offset,int count,int stride) {
-                channelArray.getArray( offset, count,stride);
+                try {
+                    channelArray.getArray( offset, count,stride);
+                } catch (Exception e) {
+                    message("exception " + e.getMessage(),MessageType.error);
+                    return;
+                }
             }
             
-            void put(int offset) {
-                int stride = Integer.parseInt(getStrideText.getText());
-            	channelArray.putArray(pvArray, offset, stride, pvArray.getLength());
+            void put(int offset,int count,int stride) {
+                try {
+                    channelArray.putArray(pvArray, offset, stride, count);
+                } catch (Exception e) {
+                    message("exception " + e.getMessage(),MessageType.error);
+                    return;
+                }
             }
             
             void getLength()
@@ -523,7 +571,7 @@ public class UnionArrayFactory {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
-                if(pvArray.getField().getType()!=Type.unionArray) {
+                if(array.getType()!=Type.unionArray) {
                 	message("The elementType is not structure",MessageType.error);
                 	return;
                 }
@@ -540,10 +588,13 @@ public class UnionArrayFactory {
                 	message(status.toString(), status.isSuccess() ? MessageType.warning : MessageType.error);
                 	if (!status.isSuccess()) return;
                 }
-                convert.copy(pvArray,this.pvArray);
+                if(pvArray==null) {
+                    this.pvArray.setLength(0);
+                } else {
+                    convert.copy(pvArray,this.pvArray);
+                }
                 runCommand = RunCommand.getDone;
                 shell.getDisplay().asyncExec(this);
-                
             }
 
            
@@ -565,6 +616,7 @@ public class UnionArrayFactory {
                 pvArray.setCapacity(capacity);
                 pvArray.setLength(length);
                 runCommand = RunCommand.getLengthDone;
+                shell.getDisplay().asyncExec(this);
             }
 			/* (non-Javadoc)
 			 * @see org.epics.pvaccess.client.ChannelArrayRequester#setLengthDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray)
@@ -604,8 +656,8 @@ public class UnionArrayFactory {
                     stateMachine.setState(State.ready);
                     return;
                 case getLengthDone:
-                    lengthText.setData(pvArray.getLength());
-                    capacityText.setData(pvArray.getCapacity());
+                    lengthText.setText(Integer.toString(pvArray.getLength()));
+                    capacityText.setText(Integer.toString(pvArray.getCapacity()));
                     message("getLengthDone",MessageType.info);
                     stateMachine.setState(State.ready);
                     return;
