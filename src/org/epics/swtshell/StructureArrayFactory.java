@@ -498,7 +498,7 @@ public class StructureArrayFactory {
             
             void put(int offset,int count,int stride) {
                 try {
-                    channelArray.putArray(pvArray, offset, stride, count);
+                    channelArray.putArray(pvArray, offset, count,stride);
                 } catch (Exception e) {
                     message("exception " + e.getMessage(),MessageType.error);
                     return;
