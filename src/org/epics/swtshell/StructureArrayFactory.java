@@ -473,18 +473,18 @@ public class StructureArrayFactory {
                 }
             }
             
-            PVStructure getPVStructure(int offset) {
-            	int length = offset+1;
+            PVStructure getPVStructure(int index) {
+            	int length = index+1;
             	if(pvArray.getLength()<length) {
             		pvArray.setLength(length);
             	}
-            	pvArray.get(0, offset+1, structureArrayData);
+            	pvArray.get(0, index+1, structureArrayData);
             	PVStructure[] pvStructures = structureArrayData.data;
             	
-            	if(pvStructures[offset]==null) {
-            		pvStructures[offset] = pvDataCreate.createPVStructure(pvArray.getStructureArray().getStructure());
+            	if(pvStructures[index]==null) {
+            		pvStructures[index] = pvDataCreate.createPVStructure(pvArray.getStructureArray().getStructure());
             	}
-            	return pvStructures[offset];
+            	return pvStructures[index];
             }
   
             void get(int offset,int count,int stride) {

@@ -336,8 +336,8 @@ public class UnionArrayFactory {
                 int stride = Integer.parseInt(getStrideText.getText());
                 channelClient.get(offset, count,stride);
             } else if(object==putElementButton) {
-            	int offset = Integer.parseInt(putOffsetText.getText());
-            	PVUnion pvUnion = channelClient.getPVUnion(offset);
+                int index = Integer.parseInt(indexText.getText());
+            	PVUnion pvUnion = channelClient.getPVUnion(index);
             	GUIData guiData = GUIDataFactory.create();
             	guiData.getUnionValue(shell,pvUnion);
             } else if(object==putButton) {
@@ -471,18 +471,18 @@ public class UnionArrayFactory {
                 }
             }
             
-            PVUnion getPVUnion(int offset) {
-            	int length = offset+1;
+            PVUnion getPVUnion(int index) {
+            	int length = index+1;
             	if(pvArray.getLength()<length) {
             		pvArray.setLength(length);
             	}
-            	pvArray.get(0, offset+1, unionArrayData);
+            	pvArray.get(0, index+1, unionArrayData);
             	PVUnion[] pvUnions = unionArrayData.data;
             	
-            	if(pvUnions[offset]==null) {
-            		pvUnions[offset] = pvDataCreate.createPVUnion(pvArray.getUnionArray().getUnion());
+            	if(pvUnions[index]==null) {
+            		pvUnions[index] = pvDataCreate.createPVUnion(pvArray.getUnionArray().getUnion());
             	}
-            	return pvUnions[offset];
+            	return pvUnions[index];
             }
   
             void get(int offset,int count,int stride) {
