@@ -94,7 +94,6 @@ public class StructureArrayFactory {
         private Button getLengthButton = null;
         private Button setLengthButton = null;
         private Text lengthText = null;
-        private Text capacityText = null;
         
         private Text consoleText = null;
         private String subField = "value";
@@ -246,16 +245,6 @@ public class StructureArrayFactory {
             gridData.widthHint = 100;
             lengthText.setLayoutData(gridData);
             lengthText.setText("0");
-            Composite capacityComposite = new Composite(setLengthComposite,SWT.BORDER);
-            gridLayout = new GridLayout();
-            gridLayout.numColumns = 3;
-            capacityComposite.setLayout(gridLayout);
-            new Label(capacityComposite,SWT.NONE).setText("capacity");
-            capacityText = new Text(capacityComposite,SWT.BORDER);
-            gridData = new GridData(); 
-            gridData.widthHint = 100;
-            capacityText.setLayoutData(gridData);
-            capacityText.setText("0");
             
             Composite consoleComposite = new Composite(shell,SWT.BORDER);
             gridLayout = new GridLayout();
@@ -353,8 +342,7 @@ public class StructureArrayFactory {
             } else if(object==setLengthButton) {
             	stateMachine.setState(State.active);
                 int length = Integer.parseInt(lengthText.getText());
-                int capacity = Integer.parseInt(capacityText.getText());
-                channelClient.setLength(length,capacity);
+                channelClient.setLength(length);
             }
         }
         
@@ -510,8 +498,8 @@ public class StructureArrayFactory {
                 channelArray.getLength();    
             }
             
-            void setLength(int length,int capacity) {
-            	channelArray.setLength( length, capacity);
+            void setLength(int length) {
+            	channelArray.setLength( length);
             }
             /* (non-Javadoc)
              * @see org.epics.pvaccess.client.ChannelRequester#channelStateChange(org.epics.pvaccess.client.Channel, org.epics.pvaccess.client.Channel.ConnectionState)
@@ -613,10 +601,9 @@ public class StructureArrayFactory {
                 shell.getDisplay().asyncExec(this);
             }
             /* (non-Javadoc)
-             * @see org.epics.pvaccess.client.ChannelArrayRequester#getLengthDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray, int, int)
+             * @see org.epics.pvaccess.client.ChannelArrayRequester#getLengthDone(org.epics.pvdata.pv.Status, org.epics.pvaccess.client.ChannelArray, int)
              */
-            public void getLengthDone(Status status, ChannelArray channelArray,int length, int capacity) {
-                pvArray.setCapacity(capacity);
+            public void getLengthDone(Status status, ChannelArray channelArray,int length) {
                 pvArray.setLength(length);
                 runCommand = RunCommand.getLengthDone;
                 shell.getDisplay().asyncExec(this);
@@ -660,7 +647,6 @@ public class StructureArrayFactory {
                     return;
                 case getLengthDone:
                     lengthText.setText(Integer.toString(pvArray.getLength()));
-                    capacityText.setText(Integer.toString(pvArray.getCapacity()));
                     message("getLengthDone",MessageType.info);
                     stateMachine.setState(State.ready);
                     return;
