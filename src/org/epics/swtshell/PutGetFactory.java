@@ -192,6 +192,7 @@ public class PutGetFactory {
         			channelClient.createPutGet(pvStructure);
         		} else {
         			channelClient.destroyPutGet();
+        			stateMachine.setState(State.readyForCreatePutGet);
         		}
         	} else if(object==putGetButton) {
         		GUIData guiData = GUIDataFactory.create();
@@ -435,8 +436,7 @@ public class PutGetFactory {
             @Override
             public void getGetDone(Status status, ChannelPutGet channelPutGet,
                     PVStructure getPVStructure, BitSet getBitSet)
-            {
-            }
+            {}
 
             @Override
             public void getPutDone(Status status, ChannelPutGet channelPutGet,
