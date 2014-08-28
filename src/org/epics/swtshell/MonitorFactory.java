@@ -505,14 +505,7 @@ public class MonitorFactory {
                  */
                 @Override
                 public void run() {
-                	if(simulateDelay>0.0) {
-                        long millis = (long)(simulateDelay*1000.0);
-                        try{
-                            Thread.sleep(millis, 0);
-                        } catch (InterruptedException e) {
-
-                        }
-                    }
+                	
                     more = true;
                     shell.getDisplay().asyncExec( new Runnable() {
                         public void run() {
@@ -530,6 +523,14 @@ public class MonitorFactory {
                                             monitorElement.getPVStructure(),
                                             monitorElement.getChangedBitSet(),
                                             monitorElement.getOverrunBitSet());
+                                }
+                                if(simulateDelay>0.0) {
+                                    long millis = (long)(simulateDelay*1000.0);
+                                    try{
+                                        Thread.sleep(millis, 0);
+                                    } catch (InterruptedException e) {
+
+                                    }
                                 }
                                 monitor.release(monitorElement);
                             }

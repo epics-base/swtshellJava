@@ -75,11 +75,14 @@ public class PrintModifiedFactory {
             builder.setLength(0);
             builder.append(structureName); 
 
-            int offset = changeBitSet.nextSetBit(0);
-            if(offset<0) {
+            int offsetChange = changeBitSet.nextSetBit(0);
+            int offsetOverrun = overrunBitSet.nextSetBit(0);
+            if(offsetChange<0 &&  offsetOverrun<0 ) {
                 builder.append(" no changes");
             } else {
-                printStructure(pvStructure,changeBitSet,overrunBitSet,0,((offset==0) ? true : false));
+//                boolean allChange = ((offsetChange==0) ? true : false);
+//                boolean allOverrun = ((offsetOverrun==0) ? true : false);
+                printStructure(pvStructure,changeBitSet,overrunBitSet,0,false,false);
             }
             convert.newLine(builder, 0);
             text.append(builder.toString());
@@ -105,9 +108,17 @@ public class PrintModifiedFactory {
             overrunBitSet = null;
 
         }
-        private void printStructure(PVStructure pvStructure,BitSet changeBitSet,BitSet overrunBitSet,int indentLevel,boolean printAll) {
+        private void printStructure(
+            PVStructure pvStructure,
+            BitSet changeBitSet,
+            BitSet overrunBitSet,
+            int indentLevel,
+            boolean printAll,
+            boolean overrunAll)
+        {
             int offset = pvStructure.getFieldOffset();
             if(changeBitSet.get(offset)) printAll = true;
+            if(overrunBitSet.get(offset)) overrunAll = true;
             String fieldName = pvStructure.getFieldName();
             String id = pvStructure.getStructure().getID();
             if(fieldName!=null && fieldName.equals("timeStamp") && pvTimeStamp.attach(pvStructure)) {
@@ -117,7 +128,7 @@ public class PrintModifiedFactory {
                 int userTag = timeStamp.getUserTag();
                 Date date = new Date(milliPastEpoch);
                 builder.append(String.format("%s %tF %tT.%tL userTag %d", id,date,date,date,userTag));
-                if(overrunBitSet.get(offset)) {
+                if(overrunAll || overrunBitSet.get(offset)) {
                     builder.append(" overrun");
                 }
                 return;
@@ -137,7 +148,7 @@ public class PrintModifiedFactory {
                     builder.append(" status ");
                     AlarmStatus status = alarm.getStatus();
                     builder.append(status.toString());
-                    if(overrunBitSet.get(pvFields[0].getFieldOffset())) {
+                    if(overrunAll || overrunBitSet.get(pvFields[0].getFieldOffset())) {
                         builder.append(" overrun");
                     }
                 }
@@ -146,7 +157,7 @@ public class PrintModifiedFactory {
                     builder.append("message ");
                     String message = alarm.getMessage();
                     builder.append(message);
-                    if(overrunBitSet.get(pvFields[1].getFieldOffset())) {
+                    if(overrunAll || overrunBitSet.get(pvFields[1].getFieldOffset())) {
                         builder.append(" overrun");
                     }
                 }
@@ -160,7 +171,13 @@ public class PrintModifiedFactory {
                     int nextSet = changeBitSet.nextSetBit(offset);
                     if(nextSet>=0 && (nextSet<pvField.getNextFieldOffset())) printIt = true;
                     if(printAll || printIt) {
-                        printStructure((PVStructure)pvField,changeBitSet,overrunBitSet,indentLevel+1,printAll);
+                        printStructure(
+                            (PVStructure)pvField,
+                            changeBitSet,
+                            overrunBitSet,
+                            indentLevel+1,
+                            printAll,
+                            overrunAll);
                     }
                     continue;
                 }
@@ -171,7 +188,7 @@ public class PrintModifiedFactory {
                     builder.append(" choice ");
                     builder.append(pvEnumerated.getChoice());
                 }
-                if(overrunBitSet.get(offset)) {
+                if(overrunAll || overrunBitSet.get(offset)) {
                     builder.append(" overrun");
                 }
             }
