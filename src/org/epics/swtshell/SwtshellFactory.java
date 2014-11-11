@@ -73,14 +73,6 @@ public class SwtshellFactory {
             layout.makeColumnsEqualWidth = true;
             shell.setLayout(layout);
             
-            Button channelListDB = new Button(shell,SWT.PUSH);
-            channelListDB.setText("channelList");
-            channelListDB.addSelectionListener( new SelectionAdapter() {
-                public void widgetSelected(SelectionEvent e) {
-                    ChannelListFactory.init(display);
-                }
-            });
-            
             Button getFieldDB = new Button(shell,SWT.PUSH);
             getFieldDB.setText("getField");
             getFieldDB.addSelectionListener( new SelectionAdapter() {
